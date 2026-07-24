@@ -48,11 +48,13 @@ func configure_match(board: MinesweeperBoard, agent_seed: int) -> void:
 	configure_agent_match(board, agent)
 
 
-func configure_agent_match(board: MinesweeperBoard, agent: MinesweeperAgent) -> void:
+func configure_agent_match(board: MinesweeperBoard, agent: MinesweeperAgent, configuration: Dictionary = {}) -> void:
 	if is_instance_valid(_timer):
 		_timer.stop()
 	simulator = Simulator.new()
-	simulator.setup(board, agent, {"record_history": true})
+	var simulator_configuration: Dictionary = configuration.duplicate(true)
+	simulator_configuration["record_history"] = true
+	simulator.setup(board, agent, simulator_configuration)
 	_timer_phase = TimerPhase.IDLE
 	_single_step_requested = false
 	_set_state(PlaybackState.STOPPED)

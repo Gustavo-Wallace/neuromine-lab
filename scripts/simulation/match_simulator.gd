@@ -13,6 +13,9 @@ var valid_action_count: int = 0
 var invalid_action_count: int = 0
 var action_attempt_count: int = 0
 var first_move: Vector2i = Vector2i(-1, -1)
+var observation_action_offset: int = 0
+var scenario_identifier: String = ""
+var _configured_first_move: Vector2i = Vector2i(-1, -1)
 
 var _pending_action: AgentAction
 var _result: ResultScript
@@ -25,11 +28,16 @@ func setup(match_board: MinesweeperBoard, match_agent: MinesweeperAgent, configu
 	agent = match_agent
 	max_action_attempts = int(configuration.get("max_actions", board.width * board.height * 4))
 	record_history = bool(configuration.get("record_history", false))
+	observation_action_offset = maxi(0, int(configuration.get("observation_action_offset", 0)))
+	_configured_first_move = configuration.get("fixed_first_move", Vector2i(-1, -1))
+	scenario_identifier = str(configuration.get("scenario_identifier", ""))
 	_clear_runtime_state()
 
 
 func reset_same_match() -> void:
 	board.reset_same_seed()
+	if _configured_first_move != Vector2i(-1, -1):
+		board.start_or_reveal_first(_configured_first_move)
 	agent.reset()
 	_clear_runtime_state()
 
@@ -50,7 +58,10 @@ func prepare_next_action() -> AgentAction:
 		return _pending_action
 	if _started_usec == 0:
 		_started_usec = Time.get_ticks_usec()
-	var observation: Dictionary = board.get_agent_observation(valid_action_count, max_action_attempts)
+	var observation: Dictionary = board.get_agent_observation(
+		valid_action_count + observation_action_offset,
+		max_action_attempts + observation_action_offset
+	)
 	_pending_action = agent.choose_action(observation)
 	if not is_instance_valid(_pending_action):
 		_finalize(ResultScript.EndReason.NO_VALID_ACTIONS)
@@ -68,7 +79,10 @@ func execute_pending_action() -> Dictionary:
 	var action: AgentAction = _pending_action
 	_pending_action = null
 	action_attempt_count += 1
-	var observation: Dictionary = board.get_agent_observation(valid_action_count, max_action_attempts)
+	var observation: Dictionary = board.get_agent_observation(
+		valid_action_count + observation_action_offset,
+		max_action_attempts + observation_action_offset
+	)
 	if not _is_action_valid(action, observation):
 		invalid_action_count += 1
 		var invalid_event := _make_event(action, false, "Inválida")
@@ -142,7 +156,7 @@ func _clear_runtime_state() -> void:
 	valid_action_count = 0
 	invalid_action_count = 0
 	action_attempt_count = 0
-	first_move = Vector2i(-1, -1)
+	first_move = _configured_first_move
 	_history.clear()
 	_started_usec = 0
 
@@ -207,8 +221,10 @@ func _finalize(reason: int) -> void:
 	_result.field_seed = board.seed if is_instance_valid(board) else 0
 	_result.agent_seed = agent.agent_seed if is_instance_valid(agent) else 0
 	_result.first_move = first_move
+	_result.scenario_identifier = scenario_identifier
 	_result.end_reason = reason
 	_result.invalid_action_count = invalid_action_count
+	_result.max_action_attempts = max_action_attempts
 	_result.agent_metadata = agent.get_result_metadata() if is_instance_valid(agent) else {}
 	if record_history:
 		_result.action_history.assign(_history)

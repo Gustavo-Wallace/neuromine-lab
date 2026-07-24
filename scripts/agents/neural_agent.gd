@@ -13,6 +13,7 @@ var network: Network
 var network_seed: int = 0
 var agent_identifier: String = "neural-random"
 var debug_enabled: bool = false
+var trained: bool = false
 var last_ranking: Array[Score] = []
 var last_chosen_candidate: Vector2i = Vector2i(-1, -1)
 var last_chosen_score: float = 0.0
@@ -97,7 +98,7 @@ func get_result_metadata() -> Dictionary:
 		"architecture": network.config.architecture.duplicate(),
 		"observation_schema_version": ObservationSchema.VERSION,
 		"parameter_count": network.get_parameter_count(),
-		"trained": false,
+		"trained": trained,
 	}
 
 

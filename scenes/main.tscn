@@ -4,7 +4,8 @@
 [ext_resource type="Script" uid="uid://ct0ny3emvoh7" path="res://scripts/ui/board_view.gd" id="2_board"]
 [ext_resource type="Script" uid="uid://dkg8x6gkvm7mk" path="res://scripts/simulation/visual_match_controller.gd" id="3_visual"]
 [ext_resource type="Script" uid="uid://cknpkvhpvc31b" path="res://scripts/ui/observation_inspector.gd" id="4_inspector"]
-[ext_resource type="Script" path="res://scripts/ui/neural_inspector.gd" id="5_neural_inspector"]
+[ext_resource type="Script" uid="uid://d4lb5ef5e3n87" path="res://scripts/ui/neural_inspector.gd" id="5_neural_inspector"]
+[ext_resource type="Script" uid="uid://cr3c8pqwqmur0" path="res://scripts/ui/evolution_panel.gd" id="6_evolution"]
 
 [sub_resource type="StyleBoxFlat" id="StylePanel"]
 bg_color = Color(0.0627, 0.0902, 0.1373, 1)
@@ -322,7 +323,7 @@ theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
 theme_override_font_sizes/font_size = 12
 text = "AGENTE ATUAL"
 
-[node name="AgentTypeOption" type="OptionButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn"]
+[node name="AgentTypeOption" type="OptionButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn" unique_id=1736412097]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
@@ -405,106 +406,108 @@ custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NeuralPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="NeuralPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=19282383]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleInset")
 
-[node name="NeuralInspector" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel"]
+[node name="NeuralInspector" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel" unique_id=453220788]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 7
 script = ExtResource("5_neural_inspector")
 
-[node name="NeuralTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="NeuralTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1911558981]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
 theme_override_font_sizes/font_size = 12
 text = "REDE NEURAL"
 
-[node name="NetworkInfo" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="NetworkInfo" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1487349835]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6902, 0.7569, 0.8471, 1)
 theme_override_font_sizes/font_size = 12
 text = "Rede neural ainda não configurada."
 autowrap_mode = 2
 
-[node name="NetworkButtons" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="NetworkButtons" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1454296248]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="NewNetworkButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/NetworkButtons"]
+[node name="NewNetworkButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/NetworkButtons" unique_id=2083647321]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleButton")
 text = "Nova rede aleatória"
 
-[node name="RecreateNetworkButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/NetworkButtons"]
+[node name="RecreateNetworkButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/NetworkButtons" unique_id=947795694]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleButton")
 text = "Recriar mesma rede"
 
-[node name="HeatmapControls" type="GridContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="HeatmapControls" type="GridContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1641550403]
 layout_mode = 2
 columns = 2
 
-[node name="ShowHeatmapButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls"]
+[node name="ShowHeatmapButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls" unique_id=1585231213]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Mostrar heatmap"
 
-[node name="ShowValuesButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls"]
+[node name="ShowValuesButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls" unique_id=2068236852]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Mostrar valores"
 
-[node name="ShowRankingButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls"]
+[node name="ShowRankingButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls" unique_id=1153592642]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Mostrar ranking"
 
-[node name="FreezeHeatmapButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls"]
+[node name="FreezeHeatmapButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/HeatmapControls" unique_id=3491995]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Congelar heatmap"
 
-[node name="RankingLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="RankingLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=245153991]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 text = "MELHORES CANDIDATAS"
 
-[node name="RankingList" type="ItemList" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="RankingList" type="ItemList" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1378810008]
 custom_minimum_size = Vector2(0, 126)
 layout_mode = 2
 
-[node name="NeuralControls" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="NeuralControls" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1143105419]
 layout_mode = 2
 
-[node name="OpenNeuralInspectorButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/NeuralControls"]
+[node name="OpenNeuralInspectorButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/NeuralControls" unique_id=56765624]
 layout_mode = 2
 text = "Abrir inspetor neural"
 
-[node name="AdvancedContainer" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="AdvancedContainer" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=1302204201]
 layout_mode = 2
 
-[node name="LayerOption" type="OptionButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/AdvancedContainer"]
+[node name="LayerOption" type="OptionButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/AdvancedContainer" unique_id=1946486676]
 layout_mode = 2
 
-[node name="ActivationInfo" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/AdvancedContainer"]
+[node name="ActivationInfo" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector/AdvancedContainer" unique_id=258961740]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6392, 0.7137, 0.8157, 1)
 theme_override_font_sizes/font_size = 11
 text = "Execute uma decisão neural para inspecionar ativações."
 autowrap_mode = 2
 
-[node name="AgentComparison" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector"]
+[node name="AgentComparison" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/NeuralPanel/NeuralInspector" unique_id=665369837]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5804, 0.651, 0.749, 1)
 theme_override_font_sizes/font_size = 12
-text = "COMPARAÇÃO (SEM APRENDIZADO)\nAleatório: 0,0%\nNeural aleatório: 0,0%"
+text = "COMPARAÇÃO (SEM APRENDIZADO)
+Aleatório: 0,0%
+Neural aleatório: 0,0%"
 
 [node name="BatchPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1229427823]
 layout_mode = 2
@@ -693,8 +696,10 @@ layout_mode = 2
 theme_override_styles/panel = SubResource("StyleInset")
 
 [node name="FutureColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel" unique_id=265053191]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 5
+script = ExtResource("6_evolution")
 
 [node name="FutureTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel/FutureColumn" unique_id=1521019353]
 layout_mode = 2

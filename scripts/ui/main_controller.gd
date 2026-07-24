@@ -12,6 +12,9 @@ const NeuralAgentScript := preload("res://scripts/agents/neural_agent.gd")
 const RandomAgentScript := preload("res://scripts/agents/random_agent.gd")
 const HeatmapScript := preload("res://scripts/ui/neural_heatmap_view.gd")
 const NeuralInspectorScript := preload("res://scripts/ui/neural_inspector.gd")
+const EvolutionPanelScript := preload("res://scripts/ui/evolution_panel.gd")
+const EvolutionIndividualScript := preload("res://scripts/evolution/evolutionary_individual.gd")
+const EvaluationScenarioScript := preload("res://scripts/simulation/evaluation_scenario.gd")
 const INITIAL_WIDTH: int = 6
 const INITIAL_HEIGHT: int = 6
 const INITIAL_MINES: int = 6
@@ -46,6 +49,7 @@ enum AgentKind {
 @onready var agent_type_option: OptionButton = %AgentTypeOption
 @onready var neural_inspector: NeuralInspectorScript = %NeuralInspector
 @onready var agent_comparison: Label = %AgentComparison
+@onready var evolution_panel: EvolutionPanelScript = %FutureColumn
 
 var board: MinesweeperBoard
 var random_statistics: Statistics = Statistics.new()
@@ -112,6 +116,35 @@ func _connect_interface() -> void:
 	%ShowRankingButton.toggled.connect(heatmap_view.set_show_ranking)
 	%FreezeHeatmapButton.toggled.connect(heatmap_view.set_frozen)
 	neural_inspector.ranking_candidate_selected.connect(_on_neural_ranking_selected)
+	evolution_panel.watch_champion_requested.connect(_on_watch_champion_requested)
+
+
+func _on_watch_champion_requested(individual: EvolutionIndividualScript, scenario: EvaluationScenarioScript) -> void:
+	if visual_controller.playback_state in [VisualControllerScript.PlaybackState.PLAYING, VisualControllerScript.PlaybackState.PAUSED]:
+		visual_controller.stop()
+	selected_agent_kind = AgentKind.NEURAL
+	agent_type_option.select(AgentKind.NEURAL)
+	statistics = neural_statistics
+	board.configure(scenario.width, scenario.height, scenario.mine_count, scenario.field_seed)
+	board.start_or_reveal_first(scenario.first_reveal)
+	var champion_agent := NeuralAgentScript.new()
+	champion_agent.set_network(individual.network.clone_network(), true)
+	champion_agent.agent_identifier = individual.identifier
+	champion_agent.trained = true
+	visual_controller.configure_agent_match(board, champion_agent, {
+		"observation_action_offset": 1,
+		"fixed_first_move": scenario.first_reveal,
+		"scenario_identifier": scenario.get_identifier(),
+	})
+	neural_inspector.set_agent(champion_agent)
+	%ShowHeatmapButton.button_pressed = true
+	heatmap_view.set_enabled(true)
+	_reset_visual_presentation()
+	current_result_text = "Fitness %.1f | pais %s/%s | abertura fixa (%d,%d)" % [
+		individual.fitness_average, individual.lineage.parent_a_identifier,
+		individual.lineage.parent_b_identifier, scenario.first_reveal.x, scenario.first_reveal.y,
+	]
+	visual_controller.start()
 
 
 func _setup_agent_options() -> void:
@@ -147,7 +180,13 @@ func _refresh_agent_panel() -> void:
 	var coordinate_text := "—" if current_coordinate == Vector2i(-1, -1) else "(%d, %d)" % [current_coordinate.x, current_coordinate.y]
 	var progress: float = 100.0 * float(board.get_revealed_safe_count()) / float(board.get_total_safe_count())
 	var move_count: int = visual_controller.simulator.valid_action_count if is_instance_valid(visual_controller.simulator) else 0
-	var agent_name := "Neural aleatório" if selected_agent_kind == AgentKind.NEURAL else "Aleatório"
+	var agent_name := "Aleatório"
+	if selected_agent_kind == AgentKind.NEURAL:
+		agent_name = "Neural aleatório"
+		if is_instance_valid(visual_controller.simulator) and visual_controller.simulator.agent is NeuralAgentScript:
+			var shown_neural_agent := visual_controller.simulator.agent as NeuralAgentScript
+			if shown_neural_agent.trained:
+				agent_name = "Campeão %s" % shown_neural_agent.agent_identifier
 	var displayed_seed: int = current_network_seed if selected_agent_kind == AgentKind.NEURAL else current_agent_seed
 	agent_details.text = (
 		"Tipo: %s\n" % agent_name
