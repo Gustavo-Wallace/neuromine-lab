@@ -225,6 +225,9 @@ func _finalize(reason: int) -> void:
 	_result.end_reason = reason
 	_result.invalid_action_count = invalid_action_count
 	_result.max_action_attempts = max_action_attempts
+	# Hidden mines are consulted only here, after actions have been resolved by the board.
+	# They never enter get_agent_observation() or the neural input vector.
+	_result.safe_decision_count = valid_action_count - (1 if reason == ResultScript.EndReason.MINE_DETONATED else 0)
 	_result.agent_metadata = agent.get_result_metadata() if is_instance_valid(agent) else {}
 	if record_history:
 		_result.action_history.assign(_history)

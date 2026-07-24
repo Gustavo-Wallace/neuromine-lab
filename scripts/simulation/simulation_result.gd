@@ -24,6 +24,7 @@ var end_reason: int = EndReason.INVALID_STATE
 var duration_seconds: float = 0.0
 var invalid_action_count: int = 0
 var max_action_attempts: int = 0
+var safe_decision_count: int = 0
 var action_history: Array[Dictionary] = []
 var agent_metadata: Dictionary = {}
 
@@ -61,6 +62,7 @@ func to_dictionary(include_history: bool = false) -> Dictionary:
 		"duration_seconds": duration_seconds,
 		"invalid_action_count": invalid_action_count,
 		"max_action_attempts": max_action_attempts,
+		"safe_decision_count": safe_decision_count,
 		"agent_metadata": agent_metadata.duplicate(true),
 	}
 	if include_history:

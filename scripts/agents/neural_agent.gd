@@ -14,6 +14,16 @@ var network_seed: int = 0
 var agent_identifier: String = "neural-random"
 var debug_enabled: bool = false
 var trained: bool = false
+var telemetry_enabled: bool = false
+var telemetry_tolerance: float = 0.0001
+var telemetry_decisions: int = 0
+var telemetry_score_count: int = 0
+var telemetry_score_sum: float = 0.0
+var telemetry_score_squared_sum: float = 0.0
+var telemetry_range_sum: float = 0.0
+var telemetry_near_equal_sum: int = 0
+var telemetry_non_finite_count: int = 0
+var telemetry_first_decision: Vector2i = Vector2i(-1, -1)
 var last_ranking: Array[Score] = []
 var last_chosen_candidate: Vector2i = Vector2i(-1, -1)
 var last_chosen_score: float = 0.0
@@ -48,6 +58,14 @@ func reset() -> void:
 	last_ranking.clear()
 	last_chosen_candidate = Vector2i(-1, -1)
 	last_chosen_score = 0.0
+	telemetry_decisions = 0
+	telemetry_score_count = 0
+	telemetry_score_sum = 0.0
+	telemetry_score_squared_sum = 0.0
+	telemetry_range_sum = 0.0
+	telemetry_near_equal_sum = 0
+	telemetry_non_finite_count = 0
+	telemetry_first_decision = Vector2i(-1, -1)
 
 
 func choose_action(visible_board_state: Dictionary) -> AgentAction:
@@ -67,18 +85,23 @@ func choose_action(visible_board_state: Dictionary) -> AgentAction:
 		)
 		var output: PackedFloat32Array = network.forward(observation.get_vector(), false)
 		if output.size() != 1:
+			telemetry_non_finite_count += 1 if telemetry_enabled else 0
 			continue
 		var retained_observation: ObservationData = observation if debug_enabled else null
 		scored_candidates.append(Score.new(candidate_position, output[0], provider_index, retained_observation))
 	if scored_candidates.is_empty():
 		return null
 	scored_candidates.sort_custom(_score_precedes)
+	if telemetry_enabled:
+		_record_telemetry(scored_candidates)
 	for ranking_index: int in range(scored_candidates.size()):
 		scored_candidates[ranking_index].ranking_index = ranking_index + 1
 	var winner: Score = scored_candidates[0]
 	last_chosen_candidate = winner.candidate_position
 	last_chosen_score = winner.raw_score
-	if debug_enabled:
+	if telemetry_enabled and telemetry_first_decision == Vector2i(-1, -1):
+		telemetry_first_decision = winner.candidate_position
+	if debug_enabled or telemetry_enabled:
 		last_ranking.assign(scored_candidates)
 	return AgentAction.reveal(winner.candidate_position, {
 		"agent": agent_identifier,
@@ -100,6 +123,43 @@ func get_result_metadata() -> Dictionary:
 		"parameter_count": network.get_parameter_count(),
 		"trained": trained,
 	}
+
+
+func get_telemetry_summary() -> Dictionary:
+	var mean: float = telemetry_score_sum / float(maxi(1, telemetry_score_count))
+	var variance: float = maxf(0.0, telemetry_score_squared_sum / float(maxi(1, telemetry_score_count)) - mean * mean)
+	return {
+		"decision_count": telemetry_decisions,
+		"score_count": telemetry_score_count,
+		"score_mean": mean,
+		"score_stddev": sqrt(variance),
+		"mean_score_range": telemetry_range_sum / float(maxi(1, telemetry_decisions)),
+		"mean_near_equal_candidates": float(telemetry_near_equal_sum) / float(maxi(1, telemetry_decisions)),
+		"non_finite_count": telemetry_non_finite_count,
+		"first_decision": telemetry_first_decision,
+	}
+
+
+func _record_telemetry(scores: Array[Score]) -> void:
+	if scores.is_empty():
+		return
+	telemetry_decisions += 1
+	var minimum: float = scores[0].raw_score
+	var maximum: float = scores[0].raw_score
+	for score: Score in scores:
+		var value: float = score.raw_score
+		if is_nan(value) or is_inf(value):
+			telemetry_non_finite_count += 1
+			continue
+		minimum = minf(minimum, value)
+		maximum = maxf(maximum, value)
+		telemetry_score_count += 1
+		telemetry_score_sum += value
+		telemetry_score_squared_sum += value * value
+	telemetry_range_sum += maximum - minimum
+	for score: Score in scores:
+		if absf(score.raw_score - maximum) < telemetry_tolerance:
+			telemetry_near_equal_sum += 1
 
 
 func _score_precedes(first: Score, second: Score) -> bool:

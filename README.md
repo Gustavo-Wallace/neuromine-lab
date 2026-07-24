@@ -1,73 +1,78 @@
 # NeuroMine Lab
 
-Laboratório visual experimental em Godot 4.7 para neuroevolução de pequenas redes neurais que jogam Campo Minado.
+Laboratório experimental em Godot 4.7 para neuroevolução de redes neurais que jogam Campo Minado.
 
 ## Estado atual
 
-O projeto contém um Campo Minado 6×6 com 6 minas, geração determinística por seed, primeira jogada segura, abertura em cascata, bandeiras e partidas visuais ou headless. Os baselines aleatório e neural aleatório continuam disponíveis.
+O projeto oferece Campo Minado determinístico, observações sanitizadas com 72 entradas, rede feedforward **72 → 24 → 12 → 1** com 2.065 parâmetros, agentes aleatório e neural, partidas visuais/headless e evolução genética reproduzível.
 
-O esquema de observação v1 converte cada casa candidata em exatamente **72 entradas** sanitizadas. A rede feedforward usa **72 → 24 → 12 → 1**, ativações TANH/TANH/SIGMOID e **2.065 parâmetros**, com inicialização Xavier, clonagem profunda e snapshots em memória.
+Não há backpropagation, gradientes, NEAT, reinforcement learning, alteração de topologia ou bandeiras automáticas.
 
-A etapa evolutiva implementa uma população real de redes neurais, avaliação padronizada, fitness, elitismo, seleção por torneio, crossover uniforme e mutação gaussiana. Não usa backpropagation, gradientes, NEAT, alteração de topologia, Python ou bibliotecas externas.
+## Presets evolutivos
 
-## Protocolo evolutivo
+O preset padrão é **Calibração sem crossover**:
 
-Os defaults iniciais são:
+- população 96, elite 8 e torneio 4;
+- crossover desativado;
+- mutação de 2% por parâmetro, intensidade 0,08 e limite ±5;
+- 12 cenários fixos de treino e 30 cenários fixos de validação;
+- abertura central fixa antes da primeira decisão neural.
 
-- população 48 e elite 4;
-- 8 cenários de treino novos e determinísticos por geração;
-- 20 cenários fixos de validação durante toda a execução;
-- torneio de tamanho 3;
-- crossover com probabilidade de 70%, escolhendo cada parâmetro 50/50;
-- mutação por parâmetro de 8%, força 0,15 e limite absoluto ±5;
-- abertura fixa no centro `(3, 3)` antes da primeira decisão neural.
+Cada filho copia profundamente um único pai escolhido por torneio e então recebe mutação. O preset anterior — população 48, elite 4, crossover de 70% e mutação de 8% — permanece disponível como **Configuração original**.
 
-A identidade completa de um cenário inclui dimensões, minas, seed do campo, posição inicial, raio seguro e versão do gerador, por exemplo:
+Os ambientes disponíveis são:
 
-`6x6:6|seed=123|start=3,3|safe_radius=1|generator=1`
+- **Calibração 5×5 / 3 minas**;
+- **Principal 6×6 / 6 minas**.
 
-Todas as redes de uma geração enfrentam a mesma suíte de treino. O fitness médio combina progresso quadrático, grande bônus de vitória, eficiência em vitórias e penalidades para ações inválidas, estados inválidos, limite de ações e mina detonada. O campeão global é escolhido na validação por fitness, vitórias, progresso e, por fim, menos ações médias.
+Trocar ambiente ou reiniciar cria um experimento isolado; históricos e estatísticas não são misturados.
 
-Cada indivíduo guarda ID (`G0001-I0037`), geração de nascimento, genoma, métricas de treino/validação, rank, pais, origem, herança do crossover e estatísticas de mutação. O histórico registra campeão, fitness, validação, diversidade, cenários e duração de cada geração.
+## Fitness calibrado
 
-## Interface
+Por partida:
 
-O painel **Evolução Genética** permite executar uma geração ou continuamente, pausar, retomar, parar, reiniciar com confirmação e alterar o tamanho dos blocos de processamento. A avaliação cede frames entre blocos e não renderiza partidas de fitness.
+```text
+fitness = progresso × 1500
+        + decisões_seguras × 30
+        + 10000 em vitória
+        + até 1000 de eficiência em vitória
+        - penalidades
+```
 
-Também é possível:
+Mina detonada vale −250, ação inválida −500 e término inválido/limite −500. Cascatas contam como uma única decisão segura.
 
-- assistir ao campeão em cenário de treino, validação ou campo manual;
-- usar heatmap, valores, ranking e inspetores durante a reprodução visual;
-- comparar, sob a mesma validação fixa, agente aleatório, neural inicial e campeão evoluído;
-- consultar fitness, vitórias, progresso, jogadas, diversidade e histórico das gerações.
+As minas ocultas são consultadas somente pelo tabuleiro para resolver a ação e avaliar seu resultado. Elas nunca entram na observação ou no vetor neural.
 
-A reprodução visual é separada da avaliação e não altera fitness ou seleção.
+## Auditoria e estagnação
+
+Cada geração registra fitness, validação, diversidade, genomas idênticos, distância entre genomas, mutações por filho, amplitude e desvio dos scores, candidatas quase empatadas e primeiras decisões distintas. Scores são considerados praticamente iguais quando diferem menos de `0,0001`.
+
+As saídas são classificadas como saudáveis, pouco diferenciadas, saturadas em zero/um ou inválidas. Após 15 gerações sem melhoria relevante na validação, a interface mostra um alerta de estagnação, mas não interrompe nem modifica parâmetros automaticamente.
+
+O painel compara, na mesma validação fixa:
+
+- baseline aleatório;
+- neural não treinado;
+- campeão da geração;
+- campeão global.
+
+Também permite executar exatamente 20 gerações, pausar, continuar, parar e assistir aos campeões com heatmap e ranking.
 
 ## Estrutura
 
-- `scripts/core/`: modelo determinístico independente de Nodes e renderização;
-- `scripts/agents/`: contrato de agente, baseline aleatório e agente neural;
-- `scripts/observation/`: candidatas e codificação do estado visível;
-- `scripts/neural/`: rede feedforward, camadas, ativações e snapshots;
-- `scripts/simulation/`: partidas, resultados e cenários padronizados;
-- `scripts/evolution/`: configuração, indivíduos, população, fitness, operadores genéticos e gerenciador;
-- `scripts/ui/`: cena, painel evolutivo, heatmap e inspetores;
-- `scripts/debug/`: 98 diagnósticos e benchmarks headless.
+- `scripts/core/`: modelo do jogo;
+- `scripts/observation/`: observações visíveis;
+- `scripts/neural/`: rede feedforward;
+- `scripts/simulation/`: partidas e cenários;
+- `scripts/evolution/`: população, fitness, genética, telemetria e estagnação;
+- `scripts/ui/`: painel, heatmap e inspetores;
+- `scripts/debug/`: 118 diagnósticos, smokes e auditorias headless.
 
-Minas ocultas, pistas ocultas e a seed do campo não são expostas ao codificador ou aos agentes.
-
-## Execução e validação
-
-Abra `scenes/main.tscn` com **Godot 4.7** ou execute o projeto pela raiz.
-
-Diagnósticos consolidados:
+## Validação
 
 ```text
 godot --headless --path . --script res://scripts/debug/run_diagnostics.gd
+godot --headless --path . --script res://scripts/debug/run_calibration_audit.gd
 ```
 
-Benchmark de três gerações usando os defaults completos:
-
-```text
-godot --headless --path . --script res://scripts/debug/run_evolution_benchmark.gd
-```
+A auditoria completa executa 20 gerações em 5×5 e 10 gerações em 6×6 usando o preset calibrado integral.

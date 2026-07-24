@@ -7,6 +7,7 @@ const Config := preload("res://scripts/evolution/evolutionary_config.gd")
 const Manager := preload("res://scripts/evolution/evolution_manager.gd")
 const Individual := preload("res://scripts/evolution/evolutionary_individual.gd")
 const Scenario := preload("res://scripts/simulation/evaluation_scenario.gd")
+const OutputAnalyzer := preload("res://scripts/evolution/neural_output_analyzer.gd")
 
 var manager: Manager
 var config: Config = Config.new()
@@ -15,6 +16,7 @@ var _running: bool = false
 var _continuous: bool = false
 var _restart_confirmation: bool = false
 var _initial_neural_network
+var _generation_target: int = -1
 
 var state_label: Label
 var generation_label: Label
@@ -27,6 +29,8 @@ var config_label: Label
 var pause_button: Button
 var restart_button: Button
 var speed_option: OptionButton
+var preset_option: OptionButton
+var environment_option: OptionButton
 
 
 func _ready() -> void:
@@ -49,6 +53,19 @@ func _build_interface() -> void:
 	progress_bar = ProgressBar.new()
 	progress_bar.custom_minimum_size = Vector2(0, 18)
 	add_child(progress_bar)
+	var selectors := HBoxContainer.new()
+	add_child(selectors)
+	preset_option = OptionButton.new()
+	preset_option.add_item("Calibração sem crossover", Config.Preset.CALIBRATION_NO_CROSSOVER)
+	preset_option.add_item("Configuração original", Config.Preset.ORIGINAL)
+	preset_option.item_selected.connect(_on_preset_selected)
+	selectors.add_child(preset_option)
+	environment_option = OptionButton.new()
+	environment_option.add_item("Calibração 5×5 / 3 minas", Config.BoardEnvironment.CALIBRATION_5X5)
+	environment_option.add_item("Principal 6×6 / 6 minas", Config.BoardEnvironment.MAIN_6X6)
+	environment_option.select(1)
+	environment_option.item_selected.connect(_on_environment_selected)
+	selectors.add_child(environment_option)
 	var primary := HBoxContainer.new()
 	add_child(primary)
 	primary.add_child(_button("Criar população", _on_create_population_pressed))
@@ -57,6 +74,7 @@ func _build_interface() -> void:
 	pause_button = _button("Pausar", _on_pause_pressed)
 	primary.add_child(pause_button)
 	primary.add_child(_button("Parar", _on_stop_pressed))
+	primary.add_child(_button("Teste 20 gerações", _on_twenty_generations_pressed))
 	var secondary := HBoxContainer.new()
 	add_child(secondary)
 	secondary.add_child(_button("Próxima geração", _on_next_generation_pressed))
@@ -120,6 +138,7 @@ func _initialize_evolution() -> void:
 		state_label.text = "Erro: " + manager.last_error
 		return
 	_initial_neural_network = manager.population.individuals[0].network.clone_network()
+	_generation_target = -1
 	progress_bar.value = 0
 	history_label.text = "Nenhuma geração concluída."
 	baseline_label.text = "Baselines ainda não calculados."
@@ -148,6 +167,14 @@ func _on_continuous_pressed() -> void:
 		_run_generations_async()
 
 
+func _on_twenty_generations_pressed() -> void:
+	if _running:
+		return
+	_generation_target = manager.history.size() + 20
+	_continuous = true
+	_run_generations_async()
+
+
 func _run_generations_async() -> void:
 	_running = true
 	while _running:
@@ -162,6 +189,9 @@ func _run_generations_async() -> void:
 			manager.process_evaluation_chunk(speed_chunk)
 			await get_tree().process_frame
 		if not _continuous or manager.state in [Manager.State.STOPPED, Manager.State.ERROR]:
+			break
+		if _generation_target >= 0 and manager.history.size() >= _generation_target:
+			_continuous = false
 			break
 	_running = false
 	_refresh_labels()
@@ -196,6 +226,17 @@ func _on_speed_selected(index: int) -> void:
 	speed_chunk = int(speed_option.get_item_metadata(index))
 
 
+func _on_preset_selected(index: int) -> void:
+	var environment_kind: int = config.environment
+	config = Config.create_calibrated(environment_kind) if index == Config.Preset.CALIBRATION_NO_CROSSOVER else Config.create_original(environment_kind)
+	_initialize_evolution()
+
+
+func _on_environment_selected(index: int) -> void:
+	config.apply_environment(index)
+	_initialize_evolution()
+
+
 func _on_watch_training_pressed() -> void:
 	var champion: Individual = manager.get_champion()
 	if is_instance_valid(champion) and is_instance_valid(manager.training_suite):
@@ -220,16 +261,23 @@ func _on_watch_manual_pressed() -> void:
 func _on_baseline_pressed() -> void:
 	baseline_label.text = "Calculando nos %d cenários fixos…" % config.validation_scenario_count
 	await get_tree().process_frame
-	var random_summary: Dictionary = manager.evaluator.evaluate_random_agent(manager.validation_suite, config.master_seed + 8000)
-	await get_tree().process_frame
-	var neural_summary: Dictionary = manager.evaluator.evaluate_neural_network(_initial_neural_network, manager.validation_suite)
-	await get_tree().process_frame
-	var champion_summary: Dictionary = manager.global_champion.validation_summary if is_instance_valid(manager.global_champion) else {}
-	baseline_label.text = (
-		"Aleatório: %.1f fit | %.1f%% vit | %.1f%% prog\n" % [random_summary.fitness_average, random_summary.win_rate, random_summary.average_progress * 100.0]
-		+ "Neural inicial: %.1f | %.1f%% | %.1f%%\n" % [neural_summary.fitness_average, neural_summary.win_rate, neural_summary.average_progress * 100.0]
-		+ ("Campeão: execute uma geração" if champion_summary.is_empty() else "Campeão: %.1f | %.1f%% | %.1f%%" % [champion_summary.fitness_average, champion_summary.win_rate, champion_summary.average_progress * 100.0])
-	)
+	var comparison: Dictionary = manager.get_baseline_comparison()
+	var lines: Array[String] = []
+	for entry: Dictionary in [
+		{"name": "BASELINE ALEATÓRIO", "key": "random"},
+		{"name": "BASELINE NEURAL NÃO TREINADO", "key": "untrained_neural"},
+		{"name": "CAMPEÃO DA GERAÇÃO", "key": "generation_champion"},
+		{"name": "CAMPEÃO GLOBAL", "key": "global_champion"},
+	]:
+		var summary: Dictionary = comparison.get(entry.key, {})
+		if summary.is_empty():
+			lines.append(entry.name + ": —")
+		else:
+			lines.append("%s: fit %.1f | prog %.1f%% | vit %d | seguras %.1f | jogadas %.1f" % [
+				entry.name, summary.fitness_average, summary.average_progress * 100.0,
+				summary.victories, summary.average_safe_decisions, summary.average_moves,
+			])
+	baseline_label.text = "\n".join(lines)
 
 
 func _on_state_changed(_new_state: int) -> void:
@@ -250,11 +298,11 @@ func _refresh_labels() -> void:
 	if not is_instance_valid(manager) or not is_instance_valid(manager.population):
 		return
 	state_label.text = "Estado: %s" % manager.get_state_text()
-	config_label.text = "Seed mestra %d | abertura evolutiva fixa (%d,%d) | treino %d / validação %d\nFitness = progresso²×%.0f + vitória %.0f + eficiência×%.0f; penalidades inválida %.0f / término %.0f / mina %.0f" % [
+	config_label.text = "%s | %s\nSeed %d | abertura fixa (%d,%d) | treino fixo %d / validação fixa %d\nFitness = progresso×%.0f + decisão segura×%.0f + vitória %.0f + eficiência×%.0f" % [
+		config.preset_name, config.environment_name,
 		config.master_seed, config.first_reveal.x, config.first_reveal.y,
 		config.training_scenario_count, config.validation_scenario_count,
-		config.progress_fitness_scale, config.victory_bonus, config.victory_efficiency_scale,
-		config.invalid_action_penalty, config.invalid_end_penalty, config.mine_detonation_penalty,
+		config.progress_fitness_scale, config.safe_decision_bonus, config.victory_bonus, config.victory_efficiency_scale,
 	]
 	var current_index: int = mini(manager.evaluation_index + 1, manager.population.individuals.size())
 	var current_identifier: String = manager.population.individuals[current_index - 1].identifier if current_index > 0 else "—"
@@ -294,14 +342,22 @@ func _refresh_labels() -> void:
 			latest.diversity.get("identical_genome_count", 0),
 			latest.diversity.get("champion_to_population_mean_distance", 0.0),
 		]
+		diversity_label.text += "\nMutados/filho %.1f | amplitude %.5f | σ scores %.5f | quase iguais %.1f | 1ª decisões distintas %d\nESTAGNAÇÃO: %d/%d gerações sem melhoria | SAÍDAS NEURAIS: %s%s" % [
+			latest.average_mutated_parameters, latest.neural_output_metrics.get("mean_score_range", 0.0),
+			latest.neural_output_metrics.get("score_stddev", 0.0), latest.neural_output_metrics.get("mean_near_equal_candidates", 0.0),
+			latest.distinct_first_decisions, latest.generations_without_improvement, config.stagnation_limit,
+			OutputAnalyzer.to_text(latest.neural_output_condition),
+			"\nALERTA: população estagnada; considere aumentar diversidade ou ajustar mutação." if manager.is_stagnated() else "",
+		]
 		var lines: Array[String] = []
 		for index: int in range(maxi(0, manager.history.size() - 8), manager.history.size()):
 			var item = manager.history[index]
-			lines.append("G%04d %s | melhor %.1f média %.1f mediana %.1f pior %.1f | val %.1f | %d vit %.1f%% prog | div %.4f | %.2fs" % [
+			var variation: String = "+" if item.validation_improved else ("=" if index == 0 else "-")
+			lines.append("%s G%04d %s | treino %.1f | média %.1f | val %.1f | %d vit | div %.4f | sem melhora %d" % [
+				variation,
 				item.generation, item.champion_identifier, item.population_best_fitness,
-				item.population_average_fitness, item.population_median_fitness, item.population_worst_fitness,
-				item.champion_validation.get("fitness_average", 0.0), item.champion_validation.get("victories", 0),
-				item.champion_validation.get("average_progress", 0.0) * 100.0,
-				item.diversity.get("mean_parameter_stddev", 0.0), item.elapsed_seconds,
+				item.population_average_fitness, item.champion_validation.get("fitness_average", 0.0),
+				item.champion_validation.get("victories", 0), item.diversity.get("mean_parameter_stddev", 0.0),
+				item.generations_without_improvement,
 			])
 		history_label.text = "\n".join(lines)

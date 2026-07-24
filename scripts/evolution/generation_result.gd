@@ -12,6 +12,12 @@ var population_worst_fitness: float = 0.0
 var diversity: Dictionary = {}
 var training_scenarios: Array[String] = []
 var elapsed_seconds: float = 0.0
+var average_mutated_parameters: float = 0.0
+var neural_output_metrics: Dictionary = {}
+var neural_output_condition: int = 0
+var distinct_first_decisions: int = 0
+var generations_without_improvement: int = 0
+var validation_improved: bool = false
 
 
 func to_dictionary() -> Dictionary:
@@ -25,4 +31,10 @@ func to_dictionary() -> Dictionary:
 		"population_worst_fitness": population_worst_fitness,
 		"diversity": diversity.duplicate(true),
 		"training_scenarios": training_scenarios.duplicate(), "elapsed_seconds": elapsed_seconds,
+		"average_mutated_parameters": average_mutated_parameters,
+		"neural_output_metrics": neural_output_metrics.duplicate(true),
+		"neural_output_condition": neural_output_condition,
+		"distinct_first_decisions": distinct_first_decisions,
+		"generations_without_improvement": generations_without_improvement,
+		"validation_improved": validation_improved,
 	}

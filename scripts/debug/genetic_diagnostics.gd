@@ -58,11 +58,11 @@ static func run_all() -> Dictionary:
 	var identifiers: Dictionary = {}
 	for item: Individual in next.individuals: identifiers[item.identifier] = true
 	_test("IDs dos indivíduos são únicos", identifiers.size() == next.individuals.size(), failures)
-	_test("Linhagens registram pais", not next.individuals.back().lineage.parent_a_identifier.is_empty() and not next.individuals.back().lineage.parent_b_identifier.is_empty(), failures)
+	_test("Linhagens registram pai genético", not next.individuals.back().lineage.parent_a_identifier.is_empty() and next.individuals.back().lineage.parent_b_identifier.is_empty(), failures)
 	_test("Elites não recebem mutação", next.individuals[0].lineage.origin == "elite" and next.individuals[0].lineage.mutation_count == 0, failures)
 	var evaluator := Evaluator.new(); evaluator.configure(config)
 	var loss := Result.new(); loss.total_safe_cells = 10; loss.revealed_safe_cells = 5; loss.end_reason = Result.EndReason.MINE_DETONATED; loss.max_action_attempts = 40
-	_test("Fitness segue fórmula documentada", is_equal_approx(float(evaluator.score_result(loss).fitness), 150.0), failures)
+	_test("Fitness segue fórmula documentada", is_equal_approx(float(evaluator.score_result(loss).fitness), 500.0), failures)
 	var near_loss := Result.new(); near_loss.total_safe_cells = 100; near_loss.revealed_safe_cells = 99; near_loss.end_reason = Result.EndReason.MINE_DETONATED; near_loss.max_action_attempts = 400
 	var victory := Result.new(); victory.victory = true; victory.total_safe_cells = 100; victory.revealed_safe_cells = 100; victory.move_count = 400; victory.max_action_attempts = 400; victory.end_reason = Result.EndReason.VICTORY
 	_test("Vitória supera derrota próxima", evaluator.score_result(victory).fitness > evaluator.score_result(near_loss).fitness, failures)

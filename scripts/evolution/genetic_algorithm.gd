@@ -56,10 +56,16 @@ func breed_next_generation(current: Population) -> Population:
 		next.individuals.append(elite)
 	while next.individuals.size() < config.population_size:
 		var parent_a: Individual = Selection.tournament(current.individuals, config.tournament_size, rng)
-		var parent_b: Individual = Selection.tournament(current.individuals, config.tournament_size, rng)
-		var crossover: Dictionary = Crossover.uniform(
-			parent_a.get_genome(), parent_b.get_genome(), config.crossover_probability, rng
-		)
+		var parent_b: Individual = null
+		var crossover: Dictionary
+		if config.crossover_enabled:
+			parent_b = Selection.tournament(current.individuals, config.tournament_size, rng)
+			crossover = Crossover.uniform(parent_a.get_genome(), parent_b.get_genome(), config.crossover_probability, rng)
+		else:
+			crossover = {
+				"success": true, "genome": parent_a.get_genome().duplicate(), "applied": false,
+				"inherited_a": parent_a.get_genome().size(), "inherited_b": 0,
+			}
 		if not crossover.success:
 			last_error = crossover.error
 			return null
@@ -74,7 +80,7 @@ func breed_next_generation(current: Population) -> Population:
 		child.network = parent_a.network.clone_network()
 		child.set_genome(mutation.genome)
 		child.lineage.parent_a_identifier = parent_a.identifier
-		child.lineage.parent_b_identifier = parent_b.identifier
+		child.lineage.parent_b_identifier = parent_b.identifier if is_instance_valid(parent_b) else ""
 		child.lineage.inherited_from_a = crossover.inherited_a
 		child.lineage.inherited_from_b = crossover.inherited_b
 		child.lineage.crossover_applied = crossover.applied
