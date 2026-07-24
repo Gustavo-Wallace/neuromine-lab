@@ -43,10 +43,14 @@ func _ready() -> void:
 
 
 func configure_match(board: MinesweeperBoard, agent_seed: int) -> void:
-	if is_instance_valid(_timer):
-		_timer.stop()
 	var agent := RandomAgentScript.new()
 	agent.configure(agent_seed)
+	configure_agent_match(board, agent)
+
+
+func configure_agent_match(board: MinesweeperBoard, agent: MinesweeperAgent) -> void:
+	if is_instance_valid(_timer):
+		_timer.stop()
 	simulator = Simulator.new()
 	simulator.setup(board, agent, {"record_history": true})
 	_timer_phase = TimerPhase.IDLE

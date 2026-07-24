@@ -19,3 +19,10 @@ func choose_action(_visible_board_state: Dictionary) -> AgentAction:
 
 func get_display_name() -> String:
 	return "Agente base"
+
+
+func get_result_metadata() -> Dictionary:
+	return {
+		"agent_type": get_display_name(),
+		"agent_seed": agent_seed,
+	}

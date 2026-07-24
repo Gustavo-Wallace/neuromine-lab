@@ -47,6 +47,10 @@ func is_active() -> bool:
 	return inspector_toggle.button_pressed
 
 
+func set_active(enabled: bool) -> void:
+	inspector_toggle.button_pressed = enabled
+
+
 func set_runtime_context(action_count: int, max_action_count: int) -> void:
 	_action_count = action_count
 	_max_action_count = maxi(1, max_action_count)

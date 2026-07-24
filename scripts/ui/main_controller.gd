@@ -8,14 +8,24 @@ const Manager := preload("res://scripts/simulation/simulation_manager.gd")
 const VisualControllerScript := preload("res://scripts/simulation/visual_match_controller.gd")
 const ResultScript := preload("res://scripts/simulation/simulation_result.gd")
 const InspectorScript := preload("res://scripts/ui/observation_inspector.gd")
+const NeuralAgentScript := preload("res://scripts/agents/neural_agent.gd")
+const RandomAgentScript := preload("res://scripts/agents/random_agent.gd")
+const HeatmapScript := preload("res://scripts/ui/neural_heatmap_view.gd")
+const NeuralInspectorScript := preload("res://scripts/ui/neural_inspector.gd")
 const INITIAL_WIDTH: int = 6
 const INITIAL_HEIGHT: int = 6
 const INITIAL_MINES: int = 6
 const INITIAL_SEED: int = 4700606
 const INITIAL_AGENT_SEED: int = 91001
+const INITIAL_NETWORK_SEED: int = 73001
 const HISTORY_DISPLAY_LIMIT: int = 12
 const BATCH_CHUNK_SIZE: int = 50
 const SPEEDS: Array[float] = [0.25, 0.5, 1.0, 2.0, 5.0, 10.0]
+
+enum AgentKind {
+	RANDOM,
+	NEURAL,
+}
 
 @onready var board_view: BoardView = %BoardView
 @onready var visual_controller: VisualControllerScript = %VisualMatchController
@@ -33,11 +43,19 @@ const SPEEDS: Array[float] = [0.25, 0.5, 1.0, 2.0, 5.0, 10.0]
 @onready var statistics_value: Label = %StatisticsValue
 @onready var history_value: Label = %HistoryValue
 @onready var observation_inspector: InspectorScript = %ObservationInspector
+@onready var agent_type_option: OptionButton = %AgentTypeOption
+@onready var neural_inspector: NeuralInspectorScript = %NeuralInspector
+@onready var agent_comparison: Label = %AgentComparison
 
 var board: MinesweeperBoard
-var statistics: Statistics = Statistics.new()
+var random_statistics: Statistics = Statistics.new()
+var neural_statistics: Statistics = Statistics.new()
+var statistics: Statistics = random_statistics
 var simulation_manager: Manager = Manager.new()
 var current_agent_seed: int = INITIAL_AGENT_SEED
+var current_network_seed: int = INITIAL_NETWORK_SEED
+var selected_agent_kind: int = AgentKind.RANDOM
+var heatmap_view: HeatmapScript = HeatmapScript.new()
 var current_coordinate: Vector2i = Vector2i(-1, -1)
 var current_result_text: String = "—"
 var action_history_lines: Array[String] = []
@@ -49,7 +67,10 @@ func _ready() -> void:
 	board.board_changed.connect(_refresh_dashboard)
 	board.configure(INITIAL_WIDTH, INITIAL_HEIGHT, INITIAL_MINES, INITIAL_SEED)
 	board_view.set_board(board)
-	visual_controller.configure_match(board, current_agent_seed)
+	heatmap_view.setup(board_view)
+	_setup_agent_options()
+	_configure_visual_match()
+	neural_inspector.set_agent(_create_neural_agent(true))
 	observation_inspector.setup(board)
 	_connect_interface()
 	_setup_speed_options()
@@ -83,6 +104,20 @@ func _connect_interface() -> void:
 	board_view.inspector_cell_selected.connect(_on_inspector_candidate_requested)
 	observation_inspector.active_changed.connect(_on_inspector_active_changed)
 	observation_inspector.observation_selected.connect(_on_inspector_observation_selected)
+	agent_type_option.item_selected.connect(_on_agent_type_selected)
+	%NewNetworkButton.pressed.connect(_on_new_network_pressed)
+	%RecreateNetworkButton.pressed.connect(_on_recreate_network_pressed)
+	%ShowHeatmapButton.toggled.connect(heatmap_view.set_enabled)
+	%ShowValuesButton.toggled.connect(heatmap_view.set_show_values)
+	%ShowRankingButton.toggled.connect(heatmap_view.set_show_ranking)
+	%FreezeHeatmapButton.toggled.connect(heatmap_view.set_frozen)
+	neural_inspector.ranking_candidate_selected.connect(_on_neural_ranking_selected)
+
+
+func _setup_agent_options() -> void:
+	agent_type_option.add_item("Agente aleatório", AgentKind.RANDOM)
+	agent_type_option.add_item("Agente neural aleatório", AgentKind.NEURAL)
+	agent_type_option.select(AgentKind.RANDOM)
 
 
 func _setup_speed_options() -> void:
@@ -112,12 +147,14 @@ func _refresh_agent_panel() -> void:
 	var coordinate_text := "—" if current_coordinate == Vector2i(-1, -1) else "(%d, %d)" % [current_coordinate.x, current_coordinate.y]
 	var progress: float = 100.0 * float(board.get_revealed_safe_count()) / float(board.get_total_safe_count())
 	var move_count: int = visual_controller.simulator.valid_action_count if is_instance_valid(visual_controller.simulator) else 0
+	var agent_name := "Neural aleatório" if selected_agent_kind == AgentKind.NEURAL else "Aleatório"
+	var displayed_seed: int = current_network_seed if selected_agent_kind == AgentKind.NEURAL else current_agent_seed
 	agent_details.text = (
-		"Tipo: Aleatório\n"
+		"Tipo: %s\n" % agent_name
 		+ "Estado: %s\n" % _playback_state_text(visual_controller.playback_state)
 		+ "Jogada atual: %d\n" % move_count
 		+ "Coordenada: %s\n" % coordinate_text
-		+ "Seed do agente: %d\n" % current_agent_seed
+		+ "%s: %d\n" % ["Seed da rede" if selected_agent_kind == AgentKind.NEURAL else "Seed do agente", displayed_seed]
 		+ "Resultado: %s\n" % current_result_text
 		+ "Progresso: %.1f%%" % progress
 	)
@@ -136,6 +173,28 @@ func _refresh_statistics() -> void:
 		+ "Ações inválidas: %d\n" % statistics.invalid_actions
 		+ "Último lote: %.0f partidas/s" % statistics.last_batch_matches_per_second
 	)
+	agent_comparison.text = (
+		"COMPARAÇÃO (SEM APRENDIZADO)\n"
+		+ "Aleatório: %.1f%% (%d partidas)\n" % [random_statistics.get_average_progress(), random_statistics.matches_played]
+		+ "Neural aleatório: %.1f%% (%d partidas)" % [neural_statistics.get_average_progress(), neural_statistics.matches_played]
+	)
+
+
+func _create_neural_agent(enable_debug: bool) -> NeuralAgentScript:
+	var agent := NeuralAgentScript.new()
+	agent.configure_neural(current_network_seed, enable_debug)
+	return agent
+
+
+func _configure_visual_match() -> void:
+	if selected_agent_kind == AgentKind.NEURAL:
+		var neural_agent: NeuralAgentScript = _create_neural_agent(true)
+		visual_controller.configure_agent_match(board, neural_agent)
+		neural_inspector.set_agent(neural_agent)
+	else:
+		var random_agent := RandomAgentScript.new()
+		random_agent.configure(current_agent_seed)
+		visual_controller.configure_agent_match(board, random_agent)
 
 
 func _board_status_text(game_status: int) -> String:
@@ -173,7 +232,7 @@ func _on_same_field_pressed() -> void:
 
 func _on_new_field_pressed() -> void:
 	board.generate_new_seed()
-	visual_controller.configure_match(board, current_agent_seed)
+	_configure_visual_match()
 	seed_input.clear()
 	_reset_visual_presentation()
 
@@ -189,7 +248,7 @@ func _on_load_seed_pressed() -> void:
 		diagnostic_result.add_theme_color_override("font_color", Color("fc8181"))
 		return
 	board.configure(board.width, board.height, board.mine_count, int(value))
-	visual_controller.configure_match(board, current_agent_seed)
+	_configure_visual_match()
 	seed_input.clear()
 	_reset_visual_presentation()
 	diagnostic_result.text = "Seed carregada. A primeira jogada definirá a área segura."
@@ -230,8 +289,49 @@ func _on_restart_match_pressed() -> void:
 
 func _on_new_match_pressed() -> void:
 	board.generate_new_seed()
-	current_agent_seed = (current_agent_seed + 1) % 1000000000000
-	visual_controller.configure_match(board, current_agent_seed)
+	if selected_agent_kind == AgentKind.RANDOM:
+		current_agent_seed = (current_agent_seed + 1) % 1000000000000
+	_configure_visual_match()
+	_reset_visual_presentation()
+
+
+func _on_agent_type_selected(index: int) -> void:
+	if selected_agent_kind == index:
+		return
+	if visual_controller.playback_state in [VisualControllerScript.PlaybackState.PLAYING, VisualControllerScript.PlaybackState.PAUSED]:
+		visual_controller.stop()
+	selected_agent_kind = index
+	statistics = neural_statistics if selected_agent_kind == AgentKind.NEURAL else random_statistics
+	board.reset_same_seed()
+	_configure_visual_match()
+	heatmap_view.clear(true)
+	_reset_visual_presentation()
+	_refresh_statistics()
+
+
+func _on_new_network_pressed() -> void:
+	current_network_seed = abs(current_network_seed * 1000003 + Time.get_ticks_usec()) % 1000000000000
+	neural_statistics.reset()
+	if selected_agent_kind != AgentKind.NEURAL:
+		agent_type_option.select(AgentKind.NEURAL)
+		_on_agent_type_selected(AgentKind.NEURAL)
+	else:
+		board.reset_same_seed()
+		_configure_visual_match()
+	%FreezeHeatmapButton.button_pressed = false
+	heatmap_view.set_frozen(false)
+	heatmap_view.clear(true)
+	_reset_visual_presentation()
+	_refresh_statistics()
+
+
+func _on_recreate_network_pressed() -> void:
+	if selected_agent_kind != AgentKind.NEURAL:
+		agent_type_option.select(AgentKind.NEURAL)
+		_on_agent_type_selected(AgentKind.NEURAL)
+	board.reset_same_seed()
+	_configure_visual_match()
+	heatmap_view.clear(true)
 	_reset_visual_presentation()
 
 
@@ -253,6 +353,12 @@ func _on_decision_preview(action: AgentAction) -> void:
 			visual_controller.simulator.max_action_attempts
 		)
 		observation_inspector.select_candidate(action.position)
+	if visual_controller.simulator.agent is NeuralAgentScript:
+		var neural_agent := visual_controller.simulator.agent as NeuralAgentScript
+		heatmap_view.update_scores(neural_agent.last_ranking)
+		neural_inspector.update_decision(neural_agent)
+	else:
+		heatmap_view.clear()
 	board_view.highlight_decision(action.position)
 	_refresh_agent_panel()
 
@@ -299,6 +405,11 @@ func _on_inspector_observation_selected(candidate_position: Vector2i) -> void:
 	board_view.highlight_observation_context(candidate_position)
 
 
+func _on_neural_ranking_selected(candidate_position: Vector2i) -> void:
+	observation_inspector.set_active(true)
+	observation_inspector.select_candidate(candidate_position)
+
+
 func _on_batch_requested(match_count: int) -> void:
 	if not _batch_running:
 		_run_batch_async(match_count)
@@ -315,16 +426,16 @@ func _run_batch_async(match_count: int) -> void:
 	var completed: int = 0
 	while completed < match_count:
 		var chunk_count: int = mini(BATCH_CHUNK_SIZE, match_count - completed)
-		simulation_manager.run_batch(
-			chunk_count,
-			board.width,
-			board.height,
-			board.mine_count,
-			board.seed,
-			current_agent_seed,
-			statistics,
-			completed
-		)
+		if selected_agent_kind == AgentKind.NEURAL:
+			simulation_manager.run_neural_batch(
+				chunk_count, board.width, board.height, board.mine_count, board.seed,
+				current_network_seed, statistics, completed
+			)
+		else:
+			simulation_manager.run_batch(
+				chunk_count, board.width, board.height, board.mine_count, board.seed,
+				current_agent_seed, statistics, completed
+			)
 		completed += chunk_count
 		batch_result.text = "Executando lote: %s / %s" % [_format_integer(completed), _format_integer(match_count)]
 		_refresh_statistics()
@@ -357,6 +468,7 @@ func _reset_visual_presentation() -> void:
 	action_history_lines.clear()
 	history_value.text = "Aguardando ações do agente."
 	board_view.clear_decision_highlight()
+	heatmap_view.clear()
 	observation_inspector.use_board_action_count()
 	_refresh_agent_panel()
 

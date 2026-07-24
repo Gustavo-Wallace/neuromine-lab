@@ -23,6 +23,7 @@ var end_reason: int = EndReason.INVALID_STATE
 var duration_seconds: float = 0.0
 var invalid_action_count: int = 0
 var action_history: Array[Dictionary] = []
+var agent_metadata: Dictionary = {}
 
 
 static func reason_to_string(reason: int) -> String:
@@ -56,6 +57,7 @@ func to_dictionary(include_history: bool = false) -> Dictionary:
 		"end_reason": end_reason,
 		"duration_seconds": duration_seconds,
 		"invalid_action_count": invalid_action_count,
+		"agent_metadata": agent_metadata.duplicate(true),
 	}
 	if include_history:
 		data["action_history"] = action_history.duplicate(true)

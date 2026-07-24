@@ -27,6 +27,12 @@ const NUMBER_COLORS: Array[Color] = [
 var cell_position: Vector2i
 var _decision_highlighted: bool = false
 var _inspector_highlight: int = 0
+var _heatmap_enabled: bool = false
+var _heatmap_score: float = 0.0
+var _heatmap_rank: int = -1
+var _heatmap_show_value: bool = false
+var _heatmap_show_rank: bool = false
+var _heatmap_winner: bool = false
 
 
 func _ready() -> void:
@@ -43,6 +49,7 @@ func setup(position: Vector2i) -> void:
 
 func display_state(state: Dictionary) -> void:
 	var visibility: int = state.visibility
+	add_theme_font_size_override("font_size", 22)
 	match visibility:
 		Types.CellVisibility.COVERED:
 			text = ""
@@ -58,6 +65,8 @@ func display_state(state: Dictionary) -> void:
 				var adjacent: int = state.adjacent_mines
 				text = str(adjacent) if adjacent > 0 else ""
 				_set_revealed_style(NUMBER_COLORS[adjacent], false)
+	if _heatmap_enabled and visibility == Types.CellVisibility.COVERED:
+		_apply_neural_heatmap()
 	if _inspector_highlight > 0:
 		_apply_inspector_highlight()
 	if _decision_highlighted:
@@ -74,6 +83,22 @@ func set_inspector_highlight(highlight_kind: int) -> void:
 	_inspector_highlight = highlight_kind
 	if highlight_kind > 0:
 		_apply_inspector_highlight()
+
+
+func set_neural_heatmap(score: float, rank: int, show_value: bool, show_rank: bool, winner: bool) -> void:
+	_heatmap_enabled = true
+	_heatmap_score = clampf(score, 0.0, 1.0)
+	_heatmap_rank = rank
+	_heatmap_show_value = show_value
+	_heatmap_show_rank = show_rank
+	_heatmap_winner = winner
+	_apply_neural_heatmap()
+
+
+func clear_neural_heatmap() -> void:
+	_heatmap_enabled = false
+	_heatmap_rank = -1
+	_heatmap_winner = false
 
 
 func _on_mouse_entered() -> void:
@@ -140,3 +165,24 @@ func _apply_inspector_highlight() -> void:
 	add_theme_stylebox_override("normal", style)
 	add_theme_stylebox_override("hover", style)
 	add_theme_stylebox_override("pressed", style)
+
+
+func _apply_neural_heatmap() -> void:
+	var low_color := Color("172033")
+	var high_color := Color("5b7fe8")
+	var background: Color = low_color.lerp(high_color, _heatmap_score)
+	var border := Color("f2d06b") if _heatmap_winner else Color("7084b8")
+	var style := _make_style(background, border, 3 if _heatmap_winner else 1)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
+	add_theme_stylebox_override("pressed", style)
+	add_theme_color_override("font_color", Color("f4f7ff"))
+	add_theme_color_override("font_hover_color", Color("ffffff"))
+	var labels: Array[String] = []
+	if _heatmap_show_value:
+		labels.append("%.2f" % _heatmap_score)
+	if _heatmap_show_rank and _heatmap_rank > 0 and _heatmap_rank <= 3:
+		labels.append("#%d" % _heatmap_rank)
+	text = "\n".join(labels)
+	if not labels.is_empty():
+		add_theme_font_size_override("font_size", 11)

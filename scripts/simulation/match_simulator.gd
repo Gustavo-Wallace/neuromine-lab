@@ -209,6 +209,7 @@ func _finalize(reason: int) -> void:
 	_result.first_move = first_move
 	_result.end_reason = reason
 	_result.invalid_action_count = invalid_action_count
+	_result.agent_metadata = agent.get_result_metadata() if is_instance_valid(agent) else {}
 	if record_history:
 		_result.action_history.assign(_history)
 	_result.duration_seconds = (

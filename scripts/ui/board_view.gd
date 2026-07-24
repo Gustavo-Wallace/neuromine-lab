@@ -13,6 +13,7 @@ var _highlighted_position: Vector2i = Vector2i(-1, -1)
 var _interaction_enabled: bool = true
 var _inspector_enabled: bool = false
 var _observation_highlights: Array[Vector2i] = []
+var _heatmap_positions: Array[Vector2i] = []
 
 
 func set_board(board: MinesweeperBoard) -> void:
@@ -117,3 +118,26 @@ func clear_observation_highlight() -> void:
 func _on_inspector_hovered(cell_position: Vector2i) -> void:
 	if _inspector_enabled:
 		inspector_cell_hovered.emit(cell_position)
+
+
+func apply_neural_heatmap(scores: Array, show_values: bool, show_ranking: bool) -> void:
+	clear_neural_heatmap()
+	for score: Variant in scores:
+		var position: Vector2i = score.candidate_position
+		if position.x < 0 or position.x >= _board.width or position.y < 0 or position.y >= _board.height:
+			continue
+		var index: int = position.y * _board.width + position.x
+		_cells[index].set_neural_heatmap(
+			float(score.normalized_score), int(score.ranking_index), show_values, show_ranking, int(score.ranking_index) == 1
+		)
+		_cells[index].display_state(_board.get_cell_state(position))
+		_heatmap_positions.append(position)
+
+
+func clear_neural_heatmap() -> void:
+	for position: Vector2i in _heatmap_positions:
+		var index: int = position.y * _board.width + position.x
+		if index >= 0 and index < _cells.size():
+			_cells[index].clear_neural_heatmap()
+			_cells[index].display_state(_board.get_cell_state(position))
+	_heatmap_positions.clear()
