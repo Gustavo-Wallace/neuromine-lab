@@ -1,6 +1,6 @@
 extends SceneTree
 
-const SelfTest := preload("res://scripts/debug/board_self_test.gd")
+const SelfTest := preload("res://scripts/debug/diagnostic_suite.gd")
 
 
 func _initialize() -> void:

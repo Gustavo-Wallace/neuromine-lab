@@ -124,6 +124,33 @@ func get_visible_board_state() -> Array[Dictionary]:
 	return result
 
 
+func get_agent_observation(move_count: int = 0) -> Dictionary:
+	var visible_cells: Array[Dictionary] = []
+	for y: int in range(height):
+		for x: int in range(width):
+			var position := Vector2i(x, y)
+			var cell: Types.CellData = _cell_at(position)
+			var sanitized_cell: Dictionary = {
+				"position": position,
+				"visibility": cell.visibility,
+			}
+			if cell.visibility == Types.CellVisibility.REVEALED:
+				if cell.has_mine:
+					sanitized_cell["content"] = "mine"
+				else:
+					sanitized_cell["content"] = "safe"
+					sanitized_cell["adjacent_mines"] = cell.adjacent_mines
+			visible_cells.append(sanitized_cell)
+	return {
+		"width": width,
+		"height": height,
+		"cells": visible_cells,
+		"estimated_remaining_mines": get_estimated_remaining_mines(),
+		"move_count": move_count,
+		"status": status,
+	}
+
+
 func get_debug_board_state() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for y: int in range(height):
@@ -150,6 +177,10 @@ func is_victory() -> bool:
 
 func is_generated() -> bool:
 	return _generated
+
+
+func get_detonated_position() -> Vector2i:
+	return _detonated_position if status == Types.GameStatus.LOST else Vector2i(-1, -1)
 
 
 func get_flag_count() -> int:

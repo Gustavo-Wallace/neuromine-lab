@@ -6,6 +6,8 @@ const CELL_SIZE: float = 58.0
 
 var _board: MinesweeperBoard
 var _cells: Array[MineCellView] = []
+var _highlighted_position: Vector2i = Vector2i(-1, -1)
+var _interaction_enabled: bool = true
 
 
 func set_board(board: MinesweeperBoard) -> void:
@@ -45,8 +47,31 @@ func _refresh_cells() -> void:
 
 
 func _on_reveal_requested(cell_position: Vector2i) -> void:
-	_board.start_or_reveal_first(cell_position)
+	if _interaction_enabled:
+		_board.start_or_reveal_first(cell_position)
 
 
 func _on_flag_requested(cell_position: Vector2i) -> void:
-	_board.toggle_flag(cell_position)
+	if _interaction_enabled:
+		_board.toggle_flag(cell_position)
+
+
+func highlight_decision(cell_position: Vector2i) -> void:
+	clear_decision_highlight()
+	if cell_position.x < 0 or cell_position.x >= _board.width or cell_position.y < 0 or cell_position.y >= _board.height:
+		return
+	_highlighted_position = cell_position
+	_cells[cell_position.y * _board.width + cell_position.x].set_decision_highlight(true)
+
+
+func clear_decision_highlight() -> void:
+	if _highlighted_position.x >= 0 and _highlighted_position.y >= 0 and not _cells.is_empty():
+		var index: int = _highlighted_position.y * _board.width + _highlighted_position.x
+		if index >= 0 and index < _cells.size():
+			_cells[index].set_decision_highlight(false)
+			_cells[index].display_state(_board.get_cell_state(_highlighted_position))
+	_highlighted_position = Vector2i(-1, -1)
+
+
+func set_interaction_enabled(enabled: bool) -> void:
+	_interaction_enabled = enabled

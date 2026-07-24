@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://ct81lkjb45she"]
 
-[ext_resource type="Script" path="res://scripts/ui/main_controller.gd" id="1_main"]
-[ext_resource type="Script" path="res://scripts/ui/board_view.gd" id="2_board"]
+[ext_resource type="Script" uid="uid://dyihcbas21n4o" path="res://scripts/ui/main_controller.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://ct0ny3emvoh7" path="res://scripts/ui/board_view.gd" id="2_board"]
+[ext_resource type="Script" uid="uid://dkg8x6gkvm7mk" path="res://scripts/simulation/visual_match_controller.gd" id="3_visual"]
 
 [sub_resource type="StyleBoxFlat" id="StylePanel"]
 bg_color = Color(0.0627, 0.0902, 0.1373, 1)
@@ -15,22 +16,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleInset"]
-bg_color = Color(0.0431, 0.0627, 0.098, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.1333, 0.1882, 0.2667, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-content_margin_left = 12.0
-content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
-
 [sub_resource type="StyleBoxFlat" id="StyleButton"]
 bg_color = Color(0.1137, 0.1725, 0.2471, 1)
 border_width_left = 1
@@ -43,7 +28,23 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="Main" type="Control"]
+[sub_resource type="StyleBoxFlat" id="StyleInset"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.0431, 0.0627, 0.098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1333, 0.1882, 0.2667, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="Main" type="Control" unique_id=705493434]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -52,7 +53,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1876306832]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -62,7 +63,11 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.0275, 0.0392, 0.0627, 1)
 
-[node name="PageMargin" type="MarginContainer" parent="."]
+[node name="VisualMatchController" type="Node" parent="." unique_id=810960502]
+unique_name_in_owner = true
+script = ExtResource("3_visual")
+
+[node name="PageMargin" type="MarginContainer" parent="." unique_id=1387180157]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -74,81 +79,79 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="Content" type="HBoxContainer" parent="PageMargin"]
+[node name="Content" type="HBoxContainer" parent="PageMargin" unique_id=1706535916]
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="BoardPanel" type="PanelContainer" parent="PageMargin/Content"]
+[node name="BoardPanel" type="PanelContainer" parent="PageMargin/Content" unique_id=2067458690]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StylePanel")
 
-[node name="BoardMargin" type="MarginContainer" parent="PageMargin/Content/BoardPanel"]
+[node name="BoardMargin" type="MarginContainer" parent="PageMargin/Content/BoardPanel" unique_id=132866169]
 layout_mode = 2
 theme_override_constants/margin_left = 22
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 22
 theme_override_constants/margin_bottom = 18
 
-[node name="BoardColumn" type="VBoxContainer" parent="PageMargin/Content/BoardPanel/BoardMargin"]
+[node name="BoardColumn" type="VBoxContainer" parent="PageMargin/Content/BoardPanel/BoardMargin" unique_id=1712542953]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="BoardHeader" type="HBoxContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn"]
+[node name="BoardHeader" type="HBoxContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn" unique_id=1514046541]
 layout_mode = 2
 
-[node name="SectionTitle" type="Label" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardHeader"]
+[node name="SectionTitle" type="Label" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardHeader" unique_id=534410550]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.7608, 0.8314, 0.9255, 1)
 theme_override_font_sizes/font_size = 14
 text = "CAMPO DE TESTE  //  INTERATIVO"
 
-[node name="LiveIndicator" type="Label" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardHeader"]
+[node name="LiveIndicator" type="Label" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardHeader" unique_id=757103896]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4078, 0.8275, 0.5686, 1)
 theme_override_font_sizes/font_size = 13
 text = "● SISTEMA ONLINE"
 
-[node name="HeaderSeparator" type="HSeparator" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn"]
-layout_mode = 2
+[node name="HeaderSeparator" type="HSeparator" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn" unique_id=1278720019]
 modulate = Color(0.2706, 0.3686, 0.4941, 0.55)
+layout_mode = 2
 
-[node name="BoardScroll" type="ScrollContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn"]
+[node name="BoardScroll" type="ScrollContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn" unique_id=625536688]
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 1
-vertical_scroll_mode = 1
 
-[node name="BoardCenter" type="CenterContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardScroll"]
+[node name="BoardCenter" type="CenterContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardScroll" unique_id=1278101744]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="BoardView" type="GridContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardScroll/BoardCenter"]
+[node name="BoardView" type="GridContainer" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn/BoardScroll/BoardCenter" unique_id=477814964]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 script = ExtResource("2_board")
 
-[node name="ControlHint" type="Label" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn"]
+[node name="ControlHint" type="Label" parent="PageMargin/Content/BoardPanel/BoardMargin/BoardColumn" unique_id=1791078369]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4471, 0.5255, 0.6353, 1)
 theme_override_font_sizes/font_size = 13
 text = "CLIQUE ESQUERDO: REVELAR    •    CLIQUE DIREITO: MARCAR"
 horizontal_alignment = 1
 
-[node name="Sidebar" type="PanelContainer" parent="PageMargin/Content"]
+[node name="Sidebar" type="PanelContainer" parent="PageMargin/Content" unique_id=865740357]
 custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
 
-[node name="SidebarScroll" type="ScrollContainer" parent="PageMargin/Content/Sidebar"]
+[node name="SidebarScroll" type="ScrollContainer" parent="PageMargin/Content/Sidebar" unique_id=893719041]
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="SidebarMargin" type="MarginContainer" parent="PageMargin/Content/Sidebar/SidebarScroll"]
+[node name="SidebarMargin" type="MarginContainer" parent="PageMargin/Content/Sidebar/SidebarScroll" unique_id=550025732]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
@@ -156,125 +159,124 @@ theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 18
 
-[node name="SidebarColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin"]
+[node name="SidebarColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin" unique_id=2022831519]
 layout_mode = 2
 theme_override_constants/separation = 11
 
-[node name="ProductTag" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="ProductTag" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1524237873]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
 theme_override_font_sizes/font_size = 12
 text = "EVOLUTIONARY SYSTEMS / 01"
 
-[node name="Title" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="Title" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1316287091]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9333, 0.9569, 0.9922, 1)
 theme_override_font_sizes/font_size = 27
 text = "NeuroMine Lab"
 
-[node name="Subtitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="Subtitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1924736256]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4941, 0.5765, 0.6863, 1)
 theme_override_font_sizes/font_size = 13
 text = "Fundação determinística do ambiente"
 
-[node name="TopSeparator" type="HSeparator" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
-layout_mode = 2
+[node name="TopSeparator" type="HSeparator" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=967814235]
 modulate = Color(0.2706, 0.3686, 0.4941, 0.55)
+layout_mode = 2
 
-[node name="CurrentLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="CurrentLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=961819224]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6275, 0.698, 0.8, 1)
 theme_override_font_sizes/font_size = 12
 text = "ESTADO ATUAL"
 
-[node name="StatsGrid" type="GridContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="StatsGrid" type="GridContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1494741061]
 layout_mode = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 7
 columns = 2
 
-[node name="SizeLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="SizeLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=677304594]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 text = "Tamanho"
 
-[node name="SizeValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="SizeValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=452639918]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8627, 0.9059, 0.9686, 1)
 text = "6 × 6"
 horizontal_alignment = 2
 
-[node name="MinesLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="MinesLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=899149531]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 text = "Minas"
 
-[node name="MinesValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="MinesValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=881257165]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8627, 0.9059, 0.9686, 1)
 text = "6"
 horizontal_alignment = 2
 
-[node name="RemainingLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="RemainingLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=410733081]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 text = "Minas estimadas"
 
-[node name="RemainingValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="RemainingValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=1749398483]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.949, 0.7216, 0.2941, 1)
 text = "6"
 horizontal_alignment = 2
 
-[node name="StateLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="StateLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=531143045]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 text = "Partida"
 
-[node name="StateValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="StateValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=404682778]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
 text = "Aguardando"
 horizontal_alignment = 2
 
-[node name="RevealedLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="RevealedLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=472197960]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 text = "Casas seguras"
 
-[node name="RevealedValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid"]
+[node name="RevealedValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatsGrid" unique_id=1814440438]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8627, 0.9059, 0.9686, 1)
 text = "0 / 30"
 horizontal_alignment = 2
 
-[node name="SeedLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="SeedLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1551150718]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
 theme_override_font_sizes/font_size = 12
 text = "SEED ATUAL (SELECIONÁVEL)"
 
-[node name="CurrentSeedValue" type="LineEdit" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="CurrentSeedValue" type="LineEdit" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=76166901]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-editable = false
-selecting_enabled = true
 text = "4700606"
 alignment = 1
+editable = false
 
-[node name="FieldActions" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="FieldActions" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1404645788]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="SameFieldButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FieldActions"]
+[node name="SameFieldButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FieldActions" unique_id=867463059]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
@@ -282,7 +284,7 @@ size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleButton")
 text = "Mesmo campo"
 
-[node name="NewFieldButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FieldActions"]
+[node name="NewFieldButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FieldActions" unique_id=1520278683]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
@@ -290,41 +292,250 @@ size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleButton")
 text = "Novo campo"
 
-[node name="SeedInput" type="LineEdit" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="SeedInput" type="LineEdit" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=115887534]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 placeholder_text = "Inserir seed numérica"
 clear_button_enabled = true
 
-[node name="LoadSeedButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="LoadSeedButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=186534382]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleButton")
 text = "Carregar seed"
 
-[node name="FuturePanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="AgentPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=327087956]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleInset")
 
-[node name="FutureColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel"]
+[node name="AgentColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel" unique_id=733921534]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="AgentTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn" unique_id=388506236]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
+theme_override_font_sizes/font_size = 12
+text = "AGENTE ATUAL"
+
+[node name="AgentDetails" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn" unique_id=1346041726]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6902, 0.7569, 0.8471, 1)
+theme_override_font_sizes/font_size = 13
+text = "Tipo: Aleatório
+Estado: Parado
+Jogada atual: 0
+Coordenada: —
+Seed do agente: 91001
+Resultado: —
+Progresso: 0,0%"
+
+[node name="WatchAgentButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn" unique_id=298527569]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Assistir agente"
+
+[node name="AgentControls" type="GridContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn" unique_id=344242201]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="PauseAgentButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=2054092832]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Pausar/Continuar"
+
+[node name="NextMoveButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=1524465834]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Próxima jogada"
+
+[node name="StopAgentButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=660029191]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Parar"
+
+[node name="RestartMatchButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=2145111688]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Reiniciar partida"
+
+[node name="NewMatchButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=563899233]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Nova partida"
+
+[node name="SpeedLabel" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=1768414820]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5216, 0.5922, 0.6941, 1)
+text = "Velocidade"
+vertical_alignment = 1
+
+[node name="SpeedOption" type="OptionButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/AgentPanel/AgentColumn/AgentControls" unique_id=1418555922]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BatchPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=1229427823]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleInset")
+
+[node name="BatchColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel" unique_id=1146844992]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="BatchTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn" unique_id=1961189603]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
+theme_override_font_sizes/font_size = 12
+text = "SIMULAÇÃO EM LOTE"
+
+[node name="BatchButtons" type="GridContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn" unique_id=916453222]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="Batch1Button" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn/BatchButtons" unique_id=335383027]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Executar 1"
+
+[node name="Batch10Button" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn/BatchButtons" unique_id=934460688]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Executar 10"
+
+[node name="Batch100Button" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn/BatchButtons" unique_id=1327379075]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Executar 100"
+
+[node name="Batch1000Button" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn/BatchButtons" unique_id=1837667899]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Executar 1.000"
+
+[node name="ResetStatsButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn" unique_id=2041159036]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Zerar estatísticas"
+
+[node name="BatchResult" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/BatchPanel/BatchColumn" unique_id=899804644]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4941, 0.5765, 0.6863, 1)
+theme_override_font_sizes/font_size = 12
+text = "Nenhum lote executado."
+autowrap_mode = 2
+
+[node name="StatisticsPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=779349646]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleInset")
+
+[node name="StatisticsColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatisticsPanel" unique_id=2054102142]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StatisticsTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatisticsPanel/StatisticsColumn" unique_id=127290307]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
+theme_override_font_sizes/font_size = 12
+text = "ESTATÍSTICAS ACUMULADAS"
+
+[node name="StatisticsValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/StatisticsPanel/StatisticsColumn" unique_id=1736528975]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6902, 0.7569, 0.8471, 1)
+theme_override_font_sizes/font_size = 12
+text = "Partidas: 0
+Vitórias / derrotas: 0 / 0
+Taxa de vitória: 0,0%
+Progresso médio / melhor: 0,0% / 0,0%
+Média de jogadas: 0,0
+Menor vitória: —
+Minas detonadas / interrompidas: 0 / 0
+Ações inválidas: 0
+Último lote: 0 partidas/s"
+
+[node name="HistoryPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=595718045]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleInset")
+
+[node name="HistoryColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/HistoryPanel" unique_id=549130020]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HistoryTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/HistoryPanel/HistoryColumn" unique_id=1585144562]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
+theme_override_font_sizes/font_size = 12
+text = "HISTÓRICO VISUAL"
+
+[node name="HistoryValue" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/HistoryPanel/HistoryColumn" unique_id=266756615]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5804, 0.651, 0.749, 1)
+theme_override_font_sizes/font_size = 12
+text = "Aguardando ações do agente."
+autowrap_mode = 2
+
+[node name="FuturePanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=914346441]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleInset")
+
+[node name="FutureColumn" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel" unique_id=265053191]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="FutureTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel/FutureColumn"]
+[node name="FutureTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel/FutureColumn" unique_id=1521019353]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4824, 0.5569, 0.6588, 1)
 theme_override_font_sizes/font_size = 12
 text = "MÓDULOS EVOLUTIVOS  //  FUTURO"
 
-[node name="FutureText" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel/FutureColumn"]
+[node name="FutureText" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/FuturePanel/FutureColumn" unique_id=1033901807]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3294, 0.4, 0.498, 1)
 theme_override_font_sizes/font_size = 13
-text = "Geração        —\nPopulação      —\nFitness        —\nTaxa de vitória —\nVelocidade     —"
+text = "Geração        —
+População      —
+Fitness        —
+Taxa de vitória —
+Velocidade     —"
 
-[node name="DiagnosticButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="DiagnosticButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=840931113]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
@@ -332,7 +543,7 @@ theme_override_colors/font_color = Color(0.7608, 0.8863, 0.9765, 1)
 theme_override_styles/normal = SubResource("StyleButton")
 text = "Executar diagnóstico"
 
-[node name="DiagnosticResult" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn"]
+[node name="DiagnosticResult" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=873371321]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4941, 0.5765, 0.6863, 1)

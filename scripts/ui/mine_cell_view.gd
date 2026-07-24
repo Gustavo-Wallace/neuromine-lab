@@ -24,6 +24,7 @@ const NUMBER_COLORS: Array[Color] = [
 ]
 
 var cell_position: Vector2i
+var _decision_highlighted: bool = false
 
 
 func _ready() -> void:
@@ -54,6 +55,14 @@ func display_state(state: Dictionary) -> void:
 				var adjacent: int = state.adjacent_mines
 				text = str(adjacent) if adjacent > 0 else ""
 				_set_revealed_style(NUMBER_COLORS[adjacent], false)
+	if _decision_highlighted:
+		_apply_decision_highlight()
+
+
+func set_decision_highlight(enabled: bool) -> void:
+	_decision_highlighted = enabled
+	if enabled:
+		_apply_decision_highlight()
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -99,3 +108,10 @@ func _make_style(background: Color, border: Color, border_width: int) -> StyleBo
 	style.content_margin_top = 2.0
 	style.content_margin_bottom = 2.0
 	return style
+
+
+func _apply_decision_highlight() -> void:
+	var style := _make_style(Color("24415a"), Color("63b3ed"), 3)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
+	add_theme_stylebox_override("pressed", style)
