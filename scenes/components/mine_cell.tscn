@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://b24cytbo5juq7"]
+
+[ext_resource type="Script" uid="uid://y1yq0p6a4l2l" path="res://scripts/ui/mine_cell_view.gd" id="1_cell"]
+
+[node name="MineCell" type="Button" unique_id=230686898]
+custom_minimum_size = Vector2(56, 56)
+script = ExtResource("1_cell")

@@ -1,3 +1,16 @@
-# Godot 4+ specific ignores
+# Godot 4 generated files
 .godot/
-/android/
+
+# Mono / C# generated files
+.mono/
+
+# Local editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and crash dumps
+*.log
+*.tmp
+crash-*.txt
