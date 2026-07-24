@@ -16,6 +16,7 @@ var height: int = 0
 var mine_count: int = 0
 var seed: int = 0
 var status: int = Types.GameStatus.READY
+var action_count: int = 0
 
 var _cells: Array[Types.CellData] = []
 var _generated: bool = false
@@ -56,6 +57,7 @@ func reveal(cell_position: Vector2i) -> bool:
 		return false
 
 	if cell.has_mine:
+		action_count += 1
 		cell.visibility = Types.CellVisibility.REVEALED
 		_detonated_position = cell_position
 		status = Types.GameStatus.LOST
@@ -64,6 +66,7 @@ func reveal(cell_position: Vector2i) -> bool:
 		game_finished.emit(false)
 		return true
 
+	action_count += 1
 	_reveal_safe_area(cell_position)
 	if get_unrevealed_safe_count() == 0:
 		status = Types.GameStatus.WON
@@ -85,6 +88,7 @@ func toggle_flag(cell_position: Vector2i) -> bool:
 		if cell.visibility == Types.CellVisibility.FLAGGED
 		else Types.CellVisibility.FLAGGED
 	)
+	action_count += 1
 	board_changed.emit()
 	return true
 
@@ -124,7 +128,8 @@ func get_visible_board_state() -> Array[Dictionary]:
 	return result
 
 
-func get_agent_observation(move_count: int = 0) -> Dictionary:
+func get_agent_observation(move_count: int = -1, max_action_count: int = 0) -> Dictionary:
+	var effective_move_count: int = action_count if move_count < 0 else move_count
 	var visible_cells: Array[Dictionary] = []
 	for y: int in range(height):
 		for x: int in range(width):
@@ -146,7 +151,11 @@ func get_agent_observation(move_count: int = 0) -> Dictionary:
 		"height": height,
 		"cells": visible_cells,
 		"estimated_remaining_mines": get_estimated_remaining_mines(),
-		"move_count": move_count,
+		"mine_count": mine_count,
+		"total_safe_cells": get_total_safe_count(),
+		"revealed_safe_cells": get_revealed_safe_count(),
+		"move_count": effective_move_count,
+		"max_action_count": max_action_count if max_action_count > 0 else width * height * 4,
 		"status": status,
 	}
 
@@ -220,6 +229,7 @@ func _create_empty_cells() -> void:
 	_generated = false
 	_detonated_position = Vector2i(-1, -1)
 	status = Types.GameStatus.READY
+	action_count = 0
 
 
 func _generate_field(first_position: Vector2i) -> void:

@@ -1,6 +1,9 @@
 class_name BoardView
 extends GridContainer
 
+signal inspector_cell_hovered(cell_position: Vector2i)
+signal inspector_cell_selected(cell_position: Vector2i)
+
 const CELL_SCENE: PackedScene = preload("res://scenes/components/mine_cell.tscn")
 const CELL_SIZE: float = 58.0
 
@@ -8,6 +11,8 @@ var _board: MinesweeperBoard
 var _cells: Array[MineCellView] = []
 var _highlighted_position: Vector2i = Vector2i(-1, -1)
 var _interaction_enabled: bool = true
+var _inspector_enabled: bool = false
+var _observation_highlights: Array[Vector2i] = []
 
 
 func set_board(board: MinesweeperBoard) -> void:
@@ -30,6 +35,7 @@ func _rebuild() -> void:
 			cell.setup(Vector2i(x, y))
 			cell.reveal_requested.connect(_on_reveal_requested)
 			cell.flag_requested.connect(_on_flag_requested)
+			cell.inspector_hovered.connect(_on_inspector_hovered)
 			add_child(cell)
 			_cells.append(cell)
 	_refresh_cells()
@@ -47,7 +53,9 @@ func _refresh_cells() -> void:
 
 
 func _on_reveal_requested(cell_position: Vector2i) -> void:
-	if _interaction_enabled:
+	if _inspector_enabled:
+		inspector_cell_selected.emit(cell_position)
+	elif _interaction_enabled:
 		_board.start_or_reveal_first(cell_position)
 
 
@@ -75,3 +83,37 @@ func clear_decision_highlight() -> void:
 
 func set_interaction_enabled(enabled: bool) -> void:
 	_interaction_enabled = enabled
+
+
+func set_inspector_enabled(enabled: bool) -> void:
+	_inspector_enabled = enabled
+	if not enabled:
+		clear_observation_highlight()
+
+
+func highlight_observation_context(candidate_position: Vector2i) -> void:
+	clear_observation_highlight()
+	for y_offset: int in range(-1, 2):
+		for x_offset: int in range(-1, 2):
+			var position := candidate_position + Vector2i(x_offset, y_offset)
+			if position.x < 0 or position.x >= _board.width or position.y < 0 or position.y >= _board.height:
+				continue
+			var index: int = position.y * _board.width + position.x
+			var kind: int = 1 if position == candidate_position else 2
+			_cells[index].set_inspector_highlight(kind)
+			_cells[index].display_state(_board.get_cell_state(position))
+			_observation_highlights.append(position)
+
+
+func clear_observation_highlight() -> void:
+	for position: Vector2i in _observation_highlights:
+		var index: int = position.y * _board.width + position.x
+		if index >= 0 and index < _cells.size():
+			_cells[index].set_inspector_highlight(0)
+			_cells[index].display_state(_board.get_cell_state(position))
+	_observation_highlights.clear()
+
+
+func _on_inspector_hovered(cell_position: Vector2i) -> void:
+	if _inspector_enabled:
+		inspector_cell_hovered.emit(cell_position)

@@ -7,6 +7,7 @@ const Statistics := preload("res://scripts/simulation/simulation_statistics.gd")
 const Manager := preload("res://scripts/simulation/simulation_manager.gd")
 const VisualControllerScript := preload("res://scripts/simulation/visual_match_controller.gd")
 const ResultScript := preload("res://scripts/simulation/simulation_result.gd")
+const InspectorScript := preload("res://scripts/ui/observation_inspector.gd")
 const INITIAL_WIDTH: int = 6
 const INITIAL_HEIGHT: int = 6
 const INITIAL_MINES: int = 6
@@ -31,6 +32,7 @@ const SPEEDS: Array[float] = [0.25, 0.5, 1.0, 2.0, 5.0, 10.0]
 @onready var batch_result: Label = %BatchResult
 @onready var statistics_value: Label = %StatisticsValue
 @onready var history_value: Label = %HistoryValue
+@onready var observation_inspector: InspectorScript = %ObservationInspector
 
 var board: MinesweeperBoard
 var statistics: Statistics = Statistics.new()
@@ -48,6 +50,7 @@ func _ready() -> void:
 	board.configure(INITIAL_WIDTH, INITIAL_HEIGHT, INITIAL_MINES, INITIAL_SEED)
 	board_view.set_board(board)
 	visual_controller.configure_match(board, current_agent_seed)
+	observation_inspector.setup(board)
 	_connect_interface()
 	_setup_speed_options()
 	_refresh_dashboard()
@@ -76,6 +79,10 @@ func _connect_interface() -> void:
 	visual_controller.decision_preview.connect(_on_decision_preview)
 	visual_controller.action_completed.connect(_on_visual_action_completed)
 	visual_controller.match_completed.connect(_on_visual_match_completed)
+	board_view.inspector_cell_hovered.connect(_on_inspector_candidate_requested)
+	board_view.inspector_cell_selected.connect(_on_inspector_candidate_requested)
+	observation_inspector.active_changed.connect(_on_inspector_active_changed)
+	observation_inspector.observation_selected.connect(_on_inspector_observation_selected)
 
 
 func _setup_speed_options() -> void:
@@ -240,6 +247,12 @@ func _on_visual_state_changed(_playback_state: int) -> void:
 
 func _on_decision_preview(action: AgentAction) -> void:
 	current_coordinate = action.position
+	if observation_inspector.is_active():
+		observation_inspector.set_runtime_context(
+			visual_controller.simulator.valid_action_count,
+			visual_controller.simulator.max_action_attempts
+		)
+		observation_inspector.select_candidate(action.position)
 	board_view.highlight_decision(action.position)
 	_refresh_agent_panel()
 
@@ -261,6 +274,29 @@ func _on_visual_match_completed(result: ResultScript) -> void:
 	current_result_text = "%s — %d jogadas" % [ResultScript.reason_to_string(result.end_reason), result.move_count]
 	_refresh_statistics()
 	_refresh_agent_panel()
+
+
+func _on_inspector_candidate_requested(candidate_position: Vector2i) -> void:
+	if observation_inspector.is_active():
+		observation_inspector.select_candidate(candidate_position)
+
+
+func _on_inspector_active_changed(enabled: bool) -> void:
+	board_view.set_inspector_enabled(enabled)
+	if enabled and is_instance_valid(visual_controller.simulator):
+		var pending_action: AgentAction = visual_controller.simulator.get_pending_action()
+		if is_instance_valid(pending_action):
+			observation_inspector.set_runtime_context(
+				visual_controller.simulator.valid_action_count,
+				visual_controller.simulator.max_action_attempts
+			)
+			observation_inspector.select_candidate(pending_action.position)
+	elif not enabled:
+		board_view.clear_observation_highlight()
+
+
+func _on_inspector_observation_selected(candidate_position: Vector2i) -> void:
+	board_view.highlight_observation_context(candidate_position)
 
 
 func _on_batch_requested(match_count: int) -> void:
@@ -321,6 +357,7 @@ func _reset_visual_presentation() -> void:
 	action_history_lines.clear()
 	history_value.text = "Aguardando ações do agente."
 	board_view.clear_decision_highlight()
+	observation_inspector.use_board_action_count()
 	_refresh_agent_panel()
 
 
@@ -328,6 +365,8 @@ func _on_diagnostic_pressed() -> void:
 	diagnostic_result.text = "Executando diagnósticos…"
 	var result: Dictionary = SelfTest.run_all()
 	diagnostic_result.text = result.summary
+	if result.has("observation_benchmark"):
+		diagnostic_result.text += "\nObservações: %.0f/s" % result.observation_benchmark.observations_per_second
 	var result_color := Color("68d391") if result.failed == 0 else Color("fc8181")
 	diagnostic_result.add_theme_color_override("font_color", result_color)
 	print("[NeuroMine Lab] " + result.summary)

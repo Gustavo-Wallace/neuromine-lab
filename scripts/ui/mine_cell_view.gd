@@ -3,6 +3,7 @@ extends Button
 
 signal reveal_requested(cell_position: Vector2i)
 signal flag_requested(cell_position: Vector2i)
+signal inspector_hovered(cell_position: Vector2i)
 
 const Types := preload("res://scripts/core/minesweeper_types.gd")
 const COLOR_COVERED := Color("25344a")
@@ -25,12 +26,14 @@ const NUMBER_COLORS: Array[Color] = [
 
 var cell_position: Vector2i
 var _decision_highlighted: bool = false
+var _inspector_highlight: int = 0
 
 
 func _ready() -> void:
 	focus_mode = Control.FOCUS_NONE
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	add_theme_font_size_override("font_size", 22)
+	mouse_entered.connect(_on_mouse_entered)
 
 
 func setup(position: Vector2i) -> void:
@@ -55,6 +58,8 @@ func display_state(state: Dictionary) -> void:
 				var adjacent: int = state.adjacent_mines
 				text = str(adjacent) if adjacent > 0 else ""
 				_set_revealed_style(NUMBER_COLORS[adjacent], false)
+	if _inspector_highlight > 0:
+		_apply_inspector_highlight()
 	if _decision_highlighted:
 		_apply_decision_highlight()
 
@@ -63,6 +68,16 @@ func set_decision_highlight(enabled: bool) -> void:
 	_decision_highlighted = enabled
 	if enabled:
 		_apply_decision_highlight()
+
+
+func set_inspector_highlight(highlight_kind: int) -> void:
+	_inspector_highlight = highlight_kind
+	if highlight_kind > 0:
+		_apply_inspector_highlight()
+
+
+func _on_mouse_entered() -> void:
+	inspector_hovered.emit(cell_position)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -112,6 +127,16 @@ func _make_style(background: Color, border: Color, border_width: int) -> StyleBo
 
 func _apply_decision_highlight() -> void:
 	var style := _make_style(Color("24415a"), Color("63b3ed"), 3)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
+	add_theme_stylebox_override("pressed", style)
+
+
+func _apply_inspector_highlight() -> void:
+	var background := Color("244235") if _inspector_highlight == 1 else Color("242b40")
+	var border := Color("68d391") if _inspector_highlight == 1 else Color("7f8fb3")
+	var width: int = 3 if _inspector_highlight == 1 else 2
+	var style := _make_style(background, border, width)
 	add_theme_stylebox_override("normal", style)
 	add_theme_stylebox_override("hover", style)
 	add_theme_stylebox_override("pressed", style)

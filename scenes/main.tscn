@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dyihcbas21n4o" path="res://scripts/ui/main_controller.gd" id="1_main"]
 [ext_resource type="Script" uid="uid://ct0ny3emvoh7" path="res://scripts/ui/board_view.gd" id="2_board"]
 [ext_resource type="Script" uid="uid://dkg8x6gkvm7mk" path="res://scripts/simulation/visual_match_controller.gd" id="3_visual"]
+[ext_resource type="Script" uid="uid://cknpkvhpvc31b" path="res://scripts/ui/observation_inspector.gd" id="4_inspector"]
 
 [sub_resource type="StyleBoxFlat" id="StylePanel"]
 bg_color = Color(0.0627, 0.0902, 0.1373, 1)
@@ -509,6 +510,75 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.5804, 0.651, 0.749, 1)
 theme_override_font_sizes/font_size = 12
 text = "Aguardando ações do agente."
+autowrap_mode = 2
+
+[node name="ObservationPanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=302142969]
+custom_minimum_size = Vector2(0, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleInset")
+
+[node name="ObservationInspector" type="VBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel" unique_id=95199260]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 7
+script = ExtResource("4_inspector")
+
+[node name="InspectorTitle" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector" unique_id=2003380846]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3882, 0.702, 0.9333, 1)
+theme_override_font_sizes/font_size = 12
+text = "INSPETOR DE OBSERVAÇÃO"
+
+[node name="InspectorToggle" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector" unique_id=156339394]
+layout_mode = 2
+text = "Ativar inspetor"
+
+[node name="Navigation" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector" unique_id=1189780913]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PreviousCandidateButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector/Navigation" unique_id=1773167051]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Candidata anterior"
+
+[node name="NextCandidateButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector/Navigation" unique_id=714089172]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Próxima candidata"
+
+[node name="Tools" type="HBoxContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector" unique_id=439164361]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CopyVectorButton" type="Button" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector/Tools" unique_id=435851165]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+text = "Copiar vetor"
+
+[node name="ShowIndicesButton" type="CheckButton" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector/Tools" unique_id=1205827305]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Mostrar índices"
+
+[node name="InspectorScroll" type="ScrollContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector" unique_id=1643364604]
+custom_minimum_size = Vector2(0, 320)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="InspectorOutput" type="Label" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn/ObservationPanel/ObservationInspector/InspectorScroll" unique_id=1662194274]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6392, 0.7137, 0.8157, 1)
+theme_override_font_sizes/font_size = 11
+text = "Inspetor desativado."
 autowrap_mode = 2
 
 [node name="FuturePanel" type="PanelContainer" parent="PageMargin/Content/Sidebar/SidebarScroll/SidebarMargin/SidebarColumn" unique_id=914346441]

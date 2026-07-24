@@ -50,7 +50,7 @@ func prepare_next_action() -> AgentAction:
 		return _pending_action
 	if _started_usec == 0:
 		_started_usec = Time.get_ticks_usec()
-	var observation: Dictionary = board.get_agent_observation(valid_action_count)
+	var observation: Dictionary = board.get_agent_observation(valid_action_count, max_action_attempts)
 	_pending_action = agent.choose_action(observation)
 	if not is_instance_valid(_pending_action):
 		_finalize(ResultScript.EndReason.NO_VALID_ACTIONS)
@@ -68,7 +68,7 @@ func execute_pending_action() -> Dictionary:
 	var action: AgentAction = _pending_action
 	_pending_action = null
 	action_attempt_count += 1
-	var observation: Dictionary = board.get_agent_observation(valid_action_count)
+	var observation: Dictionary = board.get_agent_observation(valid_action_count, max_action_attempts)
 	if not _is_action_valid(action, observation):
 		invalid_action_count += 1
 		var invalid_event := _make_event(action, false, "Inválida")
