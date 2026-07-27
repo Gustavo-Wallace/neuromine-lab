@@ -8,6 +8,7 @@ const Manager := preload("res://scripts/evolution/evolution_manager.gd")
 const Individual := preload("res://scripts/evolution/evolutionary_individual.gd")
 const Scenario := preload("res://scripts/simulation/evaluation_scenario.gd")
 const OutputAnalyzer := preload("res://scripts/evolution/neural_output_analyzer.gd")
+const HistoryChart := preload("res://scripts/ui/evolution_history_chart.gd")
 
 var manager: Manager
 var config: Config = Config.new()
@@ -36,6 +37,14 @@ var curriculum_progress: ProgressBar
 var final_test_label: Label
 var comparison_label: Label
 var advanced_container: VBoxContainer
+var phase_summary_label: Label
+var generation_champion_label: Label
+var global_champion_label: Label
+var learning_state_label: Label
+var generations_criterion: ProgressBar
+var victories_criterion: ProgressBar
+var validation_criterion: ProgressBar
+var history_chart: HistoryChart
 var _inject_confirmation: bool = false
 var _saved_comparison: Dictionary = {}
 
@@ -49,17 +58,49 @@ func _build_interface() -> void:
 	for existing_child: Node in get_children():
 		existing_child.queue_free()
 	var title := Label.new()
-	title.text = "EVOLUÇÃO GENÉTICA  //  EXPERIMENTAL"
+	title.text = "EVOLUÇÃO — VISÃO GERAL"
 	title.add_theme_color_override("font_color", Color("7dd3fc"))
 	title.add_theme_font_size_override("font_size", 12)
 	add_child(title)
+	phase_summary_label = Label.new()
+	phase_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phase_summary_label.add_theme_font_size_override("font_size", 13)
+	add_child(phase_summary_label)
+	learning_state_label = Label.new()
+	learning_state_label.add_theme_font_size_override("font_size", 14)
+	add_child(learning_state_label)
+	var champions := HBoxContainer.new()
+	champions.add_theme_constant_override("separation", 6)
+	add_child(champions)
+	generation_champion_label = _summary_card("CAMPEÃO DA GERAÇÃO", Color("38bdf8"))
+	global_champion_label = _summary_card("CAMPEÃO GLOBAL", Color("a3e635"))
+	champions.add_child(generation_champion_label.get_parent())
+	champions.add_child(global_champion_label.get_parent())
+	var criteria_title := Label.new()
+	criteria_title.text = "PROGRESSO PARA A PRÓXIMA FASE"
+	criteria_title.add_theme_color_override("font_color", Color("94a3b8"))
+	criteria_title.add_theme_font_size_override("font_size", 11)
+	add_child(criteria_title)
+	generations_criterion = _criterion_bar("Gerações")
+	victories_criterion = _criterion_bar("Vitórias")
+	validation_criterion = _criterion_bar("Validação")
+	history_chart = HistoryChart.new()
+	add_child(history_chart)
 	state_label = Label.new()
 	add_child(state_label)
-	generation_label = Label.new()
-	add_child(generation_label)
 	progress_bar = ProgressBar.new()
 	progress_bar.custom_minimum_size = Vector2(0, 18)
 	add_child(progress_bar)
+	generation_label = Label.new()
+	generation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	add_child(generation_label)
+	var primary := HBoxContainer.new()
+	add_child(primary)
+	primary.add_child(_button("1 geração", _on_one_generation_pressed))
+	primary.add_child(_button("Contínuo", _on_continuous_pressed))
+	pause_button = _button("Pausar", _on_pause_pressed)
+	primary.add_child(pause_button)
+	primary.add_child(_button("Parar", _on_stop_pressed))
 	var selectors := HBoxContainer.new()
 	add_child(selectors)
 	preset_option = OptionButton.new()
@@ -74,25 +115,6 @@ func _build_interface() -> void:
 	environment_option.select(1)
 	environment_option.item_selected.connect(_on_environment_selected)
 	selectors.add_child(environment_option)
-	curriculum_label = Label.new()
-	curriculum_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(curriculum_label)
-	curriculum_progress = ProgressBar.new(); curriculum_progress.max_value = 3.0; curriculum_progress.show_percentage = false
-	add_child(curriculum_progress)
-	var primary := HBoxContainer.new()
-	add_child(primary)
-	primary.add_child(_button("Criar população", _on_create_population_pressed))
-	primary.add_child(_button("1 geração", _on_one_generation_pressed))
-	primary.add_child(_button("Contínuo", _on_continuous_pressed))
-	pause_button = _button("Pausar", _on_pause_pressed)
-	primary.add_child(pause_button)
-	primary.add_child(_button("Parar", _on_stop_pressed))
-	primary.add_child(_button("Teste 20 gerações", _on_twenty_generations_pressed))
-	var secondary := HBoxContainer.new()
-	add_child(secondary)
-	secondary.add_child(_button("Próxima geração", _on_next_generation_pressed))
-	restart_button = _button("Reiniciar", _on_restart_pressed)
-	secondary.add_child(restart_button)
 	speed_option = OptionButton.new()
 	for data: Dictionary in [
 		{"label": "Visual", "chunk": 1}, {"label": "Normal", "chunk": 2},
@@ -102,8 +124,27 @@ func _build_interface() -> void:
 		speed_option.set_item_metadata(speed_option.item_count - 1, data.chunk)
 	speed_option.select(1)
 	speed_option.item_selected.connect(_on_speed_selected)
-	secondary.add_child(speed_option)
-	var curriculum_controls := HBoxContainer.new(); add_child(curriculum_controls)
+	selectors.add_child(speed_option)
+	var advanced_toggle := CheckButton.new()
+	advanced_toggle.text = "Detalhes avançados"
+	advanced_toggle.toggled.connect(_on_advanced_toggled)
+	add_child(advanced_toggle)
+	advanced_container = VBoxContainer.new()
+	advanced_container.visible = false
+	add_child(advanced_container)
+	curriculum_label = Label.new()
+	curriculum_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	advanced_container.add_child(curriculum_label)
+	curriculum_progress = ProgressBar.new(); curriculum_progress.max_value = 3.0; curriculum_progress.show_percentage = false
+	advanced_container.add_child(curriculum_progress)
+	var secondary := HBoxContainer.new()
+	advanced_container.add_child(secondary)
+	secondary.add_child(_button("Criar população", _on_create_population_pressed))
+	secondary.add_child(_button("Próxima geração", _on_next_generation_pressed))
+	secondary.add_child(_button("20 gerações", _on_twenty_generations_pressed))
+	restart_button = _button("Reiniciar", _on_restart_pressed)
+	secondary.add_child(restart_button)
+	var curriculum_controls := HBoxContainer.new(); advanced_container.add_child(curriculum_controls)
 	curriculum_controls.add_child(_button("Avançar fase", _on_advance_phase_pressed))
 	curriculum_controls.add_child(_button("Bloquear automático", _on_block_automatic_pressed))
 	curriculum_controls.add_child(_button("Teste final", _on_final_test_pressed))
@@ -111,41 +152,79 @@ func _build_interface() -> void:
 	curriculum_controls.add_child(_button("Reiniciar fase", _on_restart_phase_pressed))
 	config_label = Label.new()
 	config_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(config_label)
+	advanced_container.add_child(config_label)
 	metrics_label = Label.new()
 	metrics_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(metrics_label)
+	advanced_container.add_child(metrics_label)
 	diversity_label = Label.new()
 	diversity_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(diversity_label)
+	advanced_container.add_child(diversity_label)
 	var watch_row := HBoxContainer.new()
-	add_child(watch_row)
+	advanced_container.add_child(watch_row)
 	watch_row.add_child(_button("Ver treino", _on_watch_training_pressed))
 	watch_row.add_child(_button("Ver validação", _on_watch_validation_pressed))
 	watch_row.add_child(_button("Campo atual", _on_watch_manual_pressed))
-	add_child(_button("Comparar baselines", _on_baseline_pressed))
+	advanced_container.add_child(_button("Comparar baselines", _on_baseline_pressed))
 	baseline_label = Label.new()
 	baseline_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	baseline_label.text = "Baselines ainda não calculados."
-	add_child(baseline_label)
+	advanced_container.add_child(baseline_label)
 	final_test_label = Label.new(); final_test_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; final_test_label.text = "O TESTE FINAL NÃO INFLUENCIA A EVOLUÇÃO"
-	add_child(final_test_label)
-	var comparison_row := HBoxContainer.new(); add_child(comparison_row)
+	advanced_container.add_child(final_test_label)
+	var comparison_row := HBoxContainer.new(); advanced_container.add_child(comparison_row)
 	comparison_row.add_child(_button("Salvar resumo", _on_save_summary_pressed))
 	comparison_row.add_child(_button("Comparar execução", _on_compare_summary_pressed))
-	comparison_label = Label.new(); comparison_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; add_child(comparison_label)
-	var advanced_toggle := CheckButton.new(); advanced_toggle.text = "Detalhes avançados"; advanced_toggle.toggled.connect(_on_advanced_toggled); add_child(advanced_toggle)
-	advanced_container = VBoxContainer.new(); advanced_container.visible = false; add_child(advanced_container)
+	comparison_label = Label.new(); comparison_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; advanced_container.add_child(comparison_label)
 	var scenario_row := HBoxContainer.new(); advanced_container.add_child(scenario_row)
 	scenario_row.add_child(_button("Ver fixo", _on_watch_fixed_pressed)); scenario_row.add_child(_button("Ver rotativo", _on_watch_rotating_pressed)); scenario_row.add_child(_button("Ver validação", _on_watch_validation_pressed)); scenario_row.add_child(_button("Ver teste final", _on_watch_final_pressed))
 	var history_title := Label.new()
 	history_title.text = "HISTÓRICO DE GERAÇÕES"
 	history_title.add_theme_color_override("font_color", Color("94a3b8"))
-	add_child(history_title)
+	advanced_container.add_child(history_title)
 	history_label = Label.new()
 	history_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	history_label.text = "Nenhuma geração concluída."
-	add_child(history_label)
+	advanced_container.add_child(history_label)
+
+
+func _summary_card(card_title: String, accent: Color) -> Label:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.07, 0.11, 0.78)
+	style.border_width_left = 2
+	style.border_color = accent
+	style.content_margin_left = 7.0
+	style.content_margin_top = 5.0
+	style.content_margin_right = 5.0
+	style.content_margin_bottom = 5.0
+	panel.add_theme_stylebox_override("panel", style)
+	var label := Label.new()
+	label.text = card_title + "\nAguardando avaliação"
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_color_override("font_color", accent)
+	label.add_theme_font_size_override("font_size", 11)
+	panel.add_child(label)
+	return label
+
+
+func _criterion_bar(title_text: String) -> ProgressBar:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = title_text
+	label.custom_minimum_size.x = 116.0
+	label.add_theme_font_size_override("font_size", 11)
+	row.add_child(label)
+	var bar := ProgressBar.new()
+	bar.max_value = 100.0
+	bar.custom_minimum_size = Vector2(0, 14)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_theme_font_size_override("font_size", 9)
+	bar.set_meta("criterion_title", title_text)
+	bar.set_meta("criterion_label", label)
+	row.add_child(bar)
+	add_child(row)
+	return bar
 
 
 func _button(text_value: String, callback: Callable) -> Button:
@@ -393,6 +472,8 @@ func _refresh_labels() -> void:
 	if not is_instance_valid(manager) or not is_instance_valid(manager.population):
 		return
 	state_label.text = "Estado: %s" % manager.get_state_text()
+	_refresh_plain_summary()
+	history_chart.set_history(manager.history)
 	environment_option.disabled = config.curriculum_enabled
 	if config.curriculum_enabled:
 		var phase = manager.get_current_phase(); var next_phase = manager.get_next_phase(); var criteria: Dictionary = manager.last_phase_criteria
@@ -476,3 +557,97 @@ func _refresh_labels() -> void:
 				"final_test": lines.append("EVENTO: teste final executado #%d" % event.execution_count)
 				"phase_restart": lines.append("EVENTO: fase %d reiniciada" % event.phase)
 		history_label.text = "\n".join(lines)
+
+
+func _refresh_plain_summary() -> void:
+	var has_result: bool = not manager.history.is_empty()
+	var latest = manager.history.back() if has_result else null
+	var phase_name: String = manager.get_current_phase().display_name if config.curriculum_enabled else config.environment_name
+	var diversity: float = latest.diversity.get("mean_parameter_stddev", 0.0) if has_result else 0.0
+	var gap: float = latest.generalization_gap if has_result else 0.0
+	phase_summary_label.text = "Fase: %s  •  Geração global %d  •  fase %d\nDiversidade %.4f  •  Gap de generalização %.1f" % [
+		phase_name, manager.global_generation, manager.phase_generation, diversity, gap,
+	]
+	var simple_state: String = _get_simple_learning_state(latest)
+	learning_state_label.text = "● %s" % simple_state.to_upper()
+	learning_state_label.add_theme_color_override("font_color", _state_color(simple_state))
+	if has_result:
+		var generation_validation: Dictionary = latest.champion_validation
+		generation_champion_label.text = "CAMPEÃO DA GERAÇÃO\n%s\nValidação %.1f  •  %d vitórias" % [
+			latest.champion_identifier,
+			generation_validation.get("fitness_average", 0.0),
+			generation_validation.get("victories", 0),
+		]
+	else:
+		generation_champion_label.text = "CAMPEÃO DA GERAÇÃO\nAguardando avaliação"
+	if is_instance_valid(manager.global_champion):
+		var global_validation: Dictionary = manager.global_champion.validation_summary
+		global_champion_label.text = "CAMPEÃO GLOBAL\n%s\nValidação %.1f  •  %d vitórias" % [
+			manager.global_champion.identifier,
+			global_validation.get("fitness_average", 0.0),
+			global_validation.get("victories", 0),
+		]
+	else:
+		global_champion_label.text = "CAMPEÃO GLOBAL\nAguardando avaliação"
+	_refresh_criteria(latest)
+
+
+func _refresh_criteria(latest) -> void:
+	for bar: ProgressBar in [generations_criterion, victories_criterion, validation_criterion]:
+		bar.get_parent().visible = config.curriculum_enabled
+	if not config.curriculum_enabled:
+		return
+	var phase = manager.get_current_phase()
+	var criteria: Dictionary = manager.last_phase_criteria
+	if not phase.automatic_advancement_available:
+		_set_criterion(generations_criterion, 1.0, 1.0, true, "Fase final")
+		_set_criterion(victories_criterion, 1.0, 1.0, true, "Fase final")
+		_set_criterion(validation_criterion, 1.0, 1.0, true, "Fase final")
+		return
+	var validation: Dictionary = latest.champion_validation if latest != null else {}
+	var current_wins: float = float(validation.get("victories", 0))
+	var current_validation: float = float(validation.get("fitness_average", 0.0))
+	var validation_target: float = phase.minimum_validation_fitness
+	if phase.require_baseline_improvement and not manager.phase_baselines.is_empty():
+		validation_target = maxf(validation_target, maxf(
+			float(manager.phase_baselines.get("random", {}).get("fitness_average", 0.0)),
+			float(manager.phase_baselines.get("untrained_neural", {}).get("fitness_average", 0.0))
+		))
+	_set_criterion(generations_criterion, manager.phase_generation, maxi(1, phase.minimum_generations), criteria.get("generations_ok", false), "%d / %d" % [manager.phase_generation, phase.minimum_generations])
+	_set_criterion(victories_criterion, current_wins, maxf(1.0, phase.required_validation_wins), criteria.get("wins_ok", false), "%d / %d" % [int(current_wins), phase.required_validation_wins])
+	_set_criterion(validation_criterion, current_validation, maxf(1.0, validation_target), criteria.get("fitness_ok", false) and criteria.get("baselines_ok", false), "%.1f / %.1f" % [current_validation, validation_target])
+
+
+func _set_criterion(bar: ProgressBar, current: float, target: float, complete: bool, exact_values: String) -> void:
+	bar.value = 100.0 if complete else clampf(100.0 * current / maxf(1.0, target), 0.0, 99.0)
+	bar.tooltip_text = "%s — %s" % [exact_values, "concluído" if complete else "em andamento"]
+	var label: Label = bar.get_meta("criterion_label")
+	label.text = "%s  %s" % [bar.get_meta("criterion_title"), exact_values]
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color("22c55e") if complete else Color("0ea5e9")
+	fill.corner_radius_top_left = 3; fill.corner_radius_top_right = 3
+	fill.corner_radius_bottom_left = 3; fill.corner_radius_bottom_right = 3
+	bar.add_theme_stylebox_override("fill", fill)
+
+
+func _get_simple_learning_state(latest) -> String:
+	if latest == null:
+		return "aprendendo"
+	if String(latest.generalization_classification).begins_with("sobreajuste"):
+		return "sobreajuste"
+	if manager.is_stagnated():
+		return "estagnado"
+	if manager.phase_generation <= 3:
+		return "aprendendo"
+	if latest.validation_improved:
+		return "melhorando"
+	return "estável"
+
+
+func _state_color(simple_state: String) -> Color:
+	match simple_state:
+		"melhorando": return Color("22c55e")
+		"estável": return Color("a3e635")
+		"estagnado": return Color("f59e0b")
+		"sobreajuste": return Color("f43f5e")
+		_: return Color("38bdf8")

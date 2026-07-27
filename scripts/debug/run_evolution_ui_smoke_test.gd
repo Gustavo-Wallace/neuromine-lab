@@ -34,6 +34,17 @@ func _run() -> void:
 		await process_frame
 		frames += 1
 	var generation_ok: bool = panel.manager.history.size() == 1 and panel.manager.state == Manager.State.GENERATION_COMPLETE
+	var latest = panel.manager.history.back()
+	var displayed_values_ok: bool = (
+		panel.history_chart.validation_values.size() == 1
+		and is_equal_approx(panel.history_chart.validation_values[0], float(latest.champion_validation.get("fitness_average", 0.0)))
+		and is_equal_approx(panel.history_chart.population_values[0], latest.population_average_fitness)
+		and panel.generation_champion_label.text.contains("Validação %.1f" % latest.champion_validation.get("fitness_average", 0.0))
+		and panel.global_champion_label.text.contains("Validação %.1f" % panel.manager.global_champion.validation_summary.get("fitness_average", 0.0))
+		and panel.phase_summary_label.text.contains("Diversidade %.4f" % latest.diversity.get("mean_parameter_stddev", 0.0))
+		and panel.phase_summary_label.text.contains("Gap de generalização %.1f" % latest.generalization_gap)
+	)
+	var layout_ok: bool = not panel.advanced_container.visible and panel.get_combined_minimum_size().y <= 720.0
 	panel._on_watch_validation_pressed()
 	await process_frame
 	await process_frame
@@ -44,9 +55,9 @@ func _run() -> void:
 		and main.visual_controller.simulator.first_move == panel.manager.config.first_reveal
 		and main.get_node("%ShowHeatmapButton").button_pressed
 	)
-	if paused_ok and generation_ok and visual_ok:
-		print("Smoke evolução UI: aprovado (pausa, geração, campeão, abertura fixa e heatmap)")
+	if paused_ok and generation_ok and displayed_values_ok and layout_ok and visual_ok:
+		print("Smoke evolução UI: aprovado (geração completa, valores exatos, resumo em 720p, gráfico e heatmap)")
 		quit(0)
 	else:
-		printerr("Smoke evolução UI: falhou | pausa=%s geração=%s visual=%s" % [paused_ok, generation_ok, visual_ok])
+		printerr("Smoke evolução UI: falhou | pausa=%s geração=%s valores=%s layout=%s visual=%s" % [paused_ok, generation_ok, displayed_values_ok, layout_ok, visual_ok])
 		quit(1)
