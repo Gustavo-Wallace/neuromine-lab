@@ -1,78 +1,64 @@
 # NeuroMine Lab
 
-Laboratório experimental em Godot 4.7 para neuroevolução de redes neurais que jogam Campo Minado.
+Laboratório em Godot 4.7 para neuroevolução reproduzível de redes **72 → 24 → 12 → 1** em Campo Minado.
 
-## Estado atual
+## Presets
 
-O projeto oferece Campo Minado determinístico, observações sanitizadas com 72 entradas, rede feedforward **72 → 24 → 12 → 1** com 2.065 parâmetros, agentes aleatório e neural, partidas visuais/headless e evolução genética reproduzível.
+O padrão é **Currículo + diversidade**:
 
-Não há backpropagation, gradientes, NEAT, reinforcement learning, alteração de topologia ou bandeiras automáticas.
-
-## Presets evolutivos
-
-O preset padrão é **Calibração sem crossover**:
-
-- população 96, elite 8 e torneio 4;
+- população 96, elite 6 e torneio 4;
 - crossover desativado;
 - mutação de 2% por parâmetro, intensidade 0,08 e limite ±5;
-- 12 cenários fixos de treino e 30 cenários fixos de validação;
-- abertura central fixa antes da primeira decisão neural.
+- 10% de imigrantes por geração;
+- no máximo duas cópias idênticas de um genoma;
+- quatro cenários fixos e oito rotativos por geração;
+- 30 cenários fixos de validação por fase;
+- 100 cenários isolados de teste final.
 
-Cada filho copia profundamente um único pai escolhido por torneio e então recebe mutação. O preset anterior — população 48, elite 4, crossover de 70% e mutação de 8% — permanece disponível como **Configuração original**.
+Continuam disponíveis **Calibração sem crossover** e **Configuração original**.
 
-Os ambientes disponíveis são:
+## Currículo
 
-- **Calibração 5×5 / 3 minas**;
-- **Principal 6×6 / 6 minas**.
+1. **Fundamentos:** 5×5, 3 minas. Após pelo menos 10 gerações, exige 6/30 vitórias e fitness robusto de validação 4.000.
+2. **Transição:** 6×6, 4 minas. Após 10 gerações, exige 3/30 vitórias e superar os baselines.
+3. **Principal:** 6×6, 6 minas, sem avanço automático.
 
-Trocar ambiente ou reiniciar cria um experimento isolado; históricos e estatísticas não são misturados.
+Ao avançar, os genomas mantêm a arquitetura e são transferidos diretamente: 10% preservados, 70% descendentes mutados do quartil superior e 20% imigrantes. Fitness e métricas da fase anterior são descartados.
 
-## Fitness calibrado
+O sistema mantém geração global e geração da fase, avanço automático/manual, bloqueio temporário, reinício de fase e início direto em qualquer fase.
 
-Por partida:
+## Cenários e fitness robusto
+
+Cada fase possui um pool determinístico de 256 campos. O núcleo de quatro permanece fixo, enquanto oito campos rotativos mudam a cada geração. Todos os indivíduos enfrentam a mesma suíte e os elites são reavaliados.
+
+O fitness por partida continua usando progresso, decisões seguras, vitória, eficiência e penalidades. Para seleção:
 
 ```text
-fitness = progresso × 1500
-        + decisões_seguras × 30
-        + 10000 em vitória
-        + até 1000 de eficiência em vitória
-        - penalidades
+fitness robusto = média dos cenários × 0,80
+                + média do quartil inferior × 0,20
 ```
 
-Mina detonada vale −250, ação inválida −500 e término inválido/limite −500. Cascatas contam como uma única decisão segura.
+São registrados média, quartil inferior, melhor/pior campo, desvio, núcleo, rotativos, validação e gap de generalização.
 
-As minas ocultas são consultadas somente pelo tabuleiro para resolver a ação e avaliar seu resultado. Elas nunca entram na observação ou no vetor neural.
+## Diversidade
 
-## Auditoria e estagnação
+Toda reprodução reserva aproximadamente 10% da população para redes aleatórias. Descendentes que excedem duas cópias idênticas são mutados novamente e, após cinco tentativas, substituídos por imigrantes.
 
-Cada geração registra fitness, validação, diversidade, genomas idênticos, distância entre genomas, mutações por filho, amplitude e desvio dos scores, candidatas quase empatadas e primeiras decisões distintas. Scores são considerados praticamente iguais quando diferem menos de `0,0001`.
+A injeção manual de diversidade preserva elites, substitui 20% dos não elites e reforça 20% dos descendentes restantes com intensidade 0,12. Nenhum ajuste é automático.
 
-As saídas são classificadas como saudáveis, pouco diferenciadas, saturadas em zero/um ou inválidas. Após 15 gerações sem melhoria relevante na validação, a interface mostra um alerta de estagnação, mas não interrompe nem modifica parâmetros automaticamente.
+## Teste final
 
-O painel compara, na mesma validação fixa:
+O teste final possui 100 campos separados de treino e validação. Só é executado por comando e nunca influencia fitness, seleção, campeão global ou avanço curricular. A interface registra quantas consultas foram feitas.
 
-- baseline aleatório;
-- neural não treinado;
-- campeão da geração;
-- campeão global.
+## Interface e diagnóstico
 
-Também permite executar exatamente 20 gerações, pausar, continuar, parar e assistir aos campeões com heatmap e ranking.
+O painel mostra fase, contagens global/local, critérios, cenários, fitness robusto, diversidade, imigrantes, clones, gap e estagnação. Detalhes avançados permitem assistir a campos fixos, rotativos, validação e teste final.
 
-## Estrutura
+Também é possível guardar em memória o resumo de uma execução e compará-lo sequencialmente com outro preset usando seed, arquitetura e validação compatíveis.
 
-- `scripts/core/`: modelo do jogo;
-- `scripts/observation/`: observações visíveis;
-- `scripts/neural/`: rede feedforward;
-- `scripts/simulation/`: partidas e cenários;
-- `scripts/evolution/`: população, fitness, genética, telemetria e estagnação;
-- `scripts/ui/`: painel, heatmap e inspetores;
-- `scripts/debug/`: 118 diagnósticos, smokes e auditorias headless.
-
-## Validação
+O projeto mantém **148 diagnósticos** e smokes headless. Minas ocultas são usadas apenas pelo tabuleiro para resolver uma ação; nunca entram nas 72 observações neurais.
 
 ```text
 godot --headless --path . --script res://scripts/debug/run_diagnostics.gd
-godot --headless --path . --script res://scripts/debug/run_calibration_audit.gd
+godot --headless --path . --script res://scripts/debug/run_curriculum_audit.gd
 ```
-
-A auditoria completa executa 20 gerações em 5×5 e 10 gerações em 6×6 usando o preset calibrado integral.

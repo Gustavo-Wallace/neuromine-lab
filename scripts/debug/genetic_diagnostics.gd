@@ -89,7 +89,7 @@ static func run_all() -> Dictionary:
 
 
 static func _small_config() -> Config:
-	var config := Config.new(); config.population_size = 6; config.elite_count = 2
+	var config: Config = Config.create_calibrated(); config.population_size = 6; config.elite_count = 2
 	config.training_scenario_count = 2; config.validation_scenario_count = 3
 	config.tournament_size = 3; config.master_seed = 77001
 	return config

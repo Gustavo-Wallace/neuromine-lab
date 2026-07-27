@@ -20,7 +20,8 @@ func configure(evolution_config: EvolutionConfig) -> void:
 
 func evaluate_individual(individual: Individual, suite: Suite, validation: bool = false) -> Dictionary:
 	var summaries: Array[Dictionary] = []
-	for scenario: Scenario in suite.scenarios:
+	for scenario_index: int in range(suite.scenarios.size()):
+		var scenario: Scenario = suite.scenarios[scenario_index]
 		var agent := NeuralAgentScript.new()
 		agent.set_network(individual.network.clone_network(), false)
 		agent.agent_identifier = individual.identifier
@@ -29,9 +30,10 @@ func evaluate_individual(individual: Individual, suite: Suite, validation: bool 
 		agent.telemetry_tolerance = config.equal_score_tolerance
 		var result: Result = run_scenario(agent, scenario)
 		var scored: Dictionary = score_result(result)
+		scored["scenario_group"] = "core" if scenario_index < suite.core_count else ("rotating" if suite.core_count > 0 else "suite")
 		scored["neural_telemetry"] = agent.get_telemetry_summary()
 		summaries.append(scored)
-	var summary: Dictionary = _aggregate(summaries, suite.suite_identifier)
+	var summary: Dictionary = _aggregate(summaries, suite)
 	if validation:
 		individual.validation_summary = summary.duplicate(true)
 	else:
@@ -45,7 +47,7 @@ func evaluate_random_agent(suite: Suite, agent_seed: int) -> Dictionary:
 		var agent := RandomAgentScript.new()
 		agent.configure(agent_seed + scenario_index)
 		summaries.append(score_result(run_scenario(agent, suite.scenarios[scenario_index])))
-	return _aggregate(summaries, suite.suite_identifier)
+	return _aggregate(summaries, suite)
 
 
 func evaluate_neural_network(network, suite: Suite) -> Dictionary:
@@ -99,7 +101,7 @@ func score_result(result: Result) -> Dictionary:
 	}
 
 
-func _aggregate(matches: Array[Dictionary], suite_identifier: String) -> Dictionary:
+func _aggregate(matches: Array[Dictionary], suite: Suite) -> Dictionary:
 	var total_fitness: float = 0.0
 	var victories: int = 0
 	var total_progress: float = 0.0
@@ -114,8 +116,18 @@ func _aggregate(matches: Array[Dictionary], suite_identifier: String) -> Diction
 	var telemetry_equal_sum: float = 0.0
 	var telemetry_non_finite: int = 0
 	var first_decisions: Array[Vector2i] = []
+	var scenario_fitnesses: Array[float] = []
+	var core_fitness_total: float = 0.0
+	var core_matches: int = 0
+	var rotating_fitness_total: float = 0.0
+	var rotating_matches: int = 0
 	for match_summary: Dictionary in matches:
 		total_fitness += float(match_summary.fitness)
+		scenario_fitnesses.append(float(match_summary.fitness))
+		if match_summary.get("scenario_group", "") == "core":
+			core_fitness_total += float(match_summary.fitness); core_matches += 1
+		elif match_summary.get("scenario_group", "") == "rotating":
+			rotating_fitness_total += float(match_summary.fitness); rotating_matches += 1
 		victories += 1 if match_summary.victory else 0
 		total_progress += float(match_summary.progress)
 		best_progress = maxf(best_progress, float(match_summary.progress))
@@ -133,9 +145,22 @@ func _aggregate(matches: Array[Dictionary], suite_identifier: String) -> Diction
 			var first_position: Vector2i = telemetry.get("first_decision", Vector2i(-1, -1))
 			if first_position != Vector2i(-1, -1): first_decisions.append(first_position)
 	var count: int = matches.size()
+	scenario_fitnesses.sort()
+	var fitness_mean: float = total_fitness / float(maxi(1, count))
+	var robust: Dictionary = calculate_robust_fitness(scenario_fitnesses, config.robust_mean_weight, config.robust_lower_quartile_weight)
+	var lower_quartile_fitness: float = robust.lower_quartile_fitness
+	var selection_fitness: float = robust.selection_fitness
+	var scenario_variance: float = 0.0
+	for value: float in scenario_fitnesses: scenario_variance += (value - fitness_mean) * (value - fitness_mean)
 	return {
-		"suite_identifier": suite_identifier, "fitness_total": total_fitness,
-		"fitness_average": total_fitness / float(maxi(1, count)),
+		"suite_identifier": suite.suite_identifier, "fitness_total": total_fitness,
+		"fitness_average": selection_fitness, "fitness_mean": fitness_mean,
+		"lower_quartile_fitness": lower_quartile_fitness, "selection_fitness": selection_fitness,
+		"best_scenario_fitness": scenario_fitnesses.back() if not scenario_fitnesses.is_empty() else 0.0,
+		"worst_scenario_fitness": scenario_fitnesses[0] if not scenario_fitnesses.is_empty() else 0.0,
+		"scenario_fitness_stddev": sqrt(scenario_variance / float(maxi(1, count))),
+		"core_fitness": core_fitness_total / float(maxi(1, core_matches)),
+		"rotating_fitness": rotating_fitness_total / float(maxi(1, rotating_matches)),
 		"victories": victories, "win_rate": 100.0 * float(victories) / float(maxi(1, count)),
 		"average_progress": total_progress / float(maxi(1, count)), "best_progress": best_progress,
 		"average_moves": float(total_moves) / float(maxi(1, count)), "evaluated_matches": count,
@@ -151,3 +176,15 @@ func _aggregate(matches: Array[Dictionary], suite_identifier: String) -> Diction
 		},
 		"matches": matches.duplicate(true),
 	}
+
+
+static func calculate_robust_fitness(values: Array[float], mean_weight: float = 0.80, lower_weight: float = 0.20) -> Dictionary:
+	if values.is_empty(): return {"fitness_mean": 0.0, "lower_quartile_fitness": 0.0, "selection_fitness": 0.0}
+	var sorted: Array[float] = values.duplicate(); sorted.sort()
+	var total: float = 0.0
+	for value: float in sorted: total += value
+	var mean: float = total / float(sorted.size())
+	var lower_count: int = maxi(1, ceili(float(sorted.size()) * 0.25)); var lower_total: float = 0.0
+	for index: int in range(lower_count): lower_total += sorted[index]
+	var lower: float = lower_total / float(lower_count)
+	return {"fitness_mean": mean, "lower_quartile_fitness": lower, "selection_fitness": mean * mean_weight + lower * lower_weight}

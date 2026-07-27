@@ -20,6 +20,9 @@ var rank: int = 0
 var lineage: Lineage = Lineage.new()
 var training_summary: Dictionary = {}
 var validation_summary: Dictionary = {}
+var origin_phase: int = 1
+var global_generation: int = 1
+var phase_generation: int = 1
 
 
 func get_genome() -> PackedFloat32Array:
@@ -60,6 +63,9 @@ func duplicate_individual(new_identifier: String = ""):
 	copy.lineage = lineage.duplicate_record()
 	copy.training_summary = training_summary.duplicate(true)
 	copy.validation_summary = validation_summary.duplicate(true)
+	copy.origin_phase = origin_phase
+	copy.global_generation = global_generation
+	copy.phase_generation = phase_generation
 	return copy
 
 

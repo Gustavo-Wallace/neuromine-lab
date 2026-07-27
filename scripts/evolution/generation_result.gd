@@ -18,6 +18,16 @@ var neural_output_condition: int = 0
 var distinct_first_decisions: int = 0
 var generations_without_improvement: int = 0
 var validation_improved: bool = false
+var global_generation: int = 1
+var phase_generation: int = 1
+var phase_index: int = 1
+var breeding_metrics: Dictionary = {}
+var diversity_after_evaluation: Dictionary = {}
+var generalization_gap: float = 0.0
+var generalization_gap_percent: float = 0.0
+var generalization_classification: String = "saudável"
+var core_fitness: float = 0.0
+var rotating_fitness: float = 0.0
 
 
 func to_dictionary() -> Dictionary:
@@ -37,4 +47,9 @@ func to_dictionary() -> Dictionary:
 		"distinct_first_decisions": distinct_first_decisions,
 		"generations_without_improvement": generations_without_improvement,
 		"validation_improved": validation_improved,
+		"global_generation": global_generation, "phase_generation": phase_generation, "phase_index": phase_index,
+		"breeding_metrics": breeding_metrics.duplicate(true), "diversity_after_evaluation": diversity_after_evaluation.duplicate(true),
+		"generalization_gap": generalization_gap, "generalization_gap_percent": generalization_gap_percent,
+		"generalization_classification": generalization_classification,
+		"core_fitness": core_fitness, "rotating_fitness": rotating_fitness,
 	}

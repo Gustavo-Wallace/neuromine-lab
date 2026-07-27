@@ -5,6 +5,7 @@ const Scenario := preload("res://scripts/simulation/evaluation_scenario.gd")
 
 var suite_identifier: String = ""
 var scenarios: Array[Scenario] = []
+var core_count: int = 0
 
 
 static func create_deterministic(
@@ -37,6 +38,7 @@ func get_identifiers() -> Array[String]:
 func duplicate_suite():
 	var copy = get_script().new()
 	copy.suite_identifier = suite_identifier
+	copy.core_count = core_count
 	for scenario: Scenario in scenarios:
 		copy.scenarios.append(scenario.duplicate_scenario())
 	return copy

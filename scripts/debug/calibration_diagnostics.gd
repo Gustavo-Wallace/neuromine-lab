@@ -34,13 +34,14 @@ static func run_all() -> Dictionary:
 	var elites_identical: bool = true
 	for index: int in range(calibrated.elite_count): elites_identical = elites_identical and next.individuals[index].get_genome() == population.individuals[index].get_genome()
 	_test("Elites permanecem idênticos", elites_identical, failures)
-	var small: Config = _small_calibrated(Config.BoardEnvironment.MAIN_6X6)
+	var small: Config = _small_calibrated(Config.ENV_MAIN_6X6)
 	var fixed_manager := Manager.new(); fixed_manager.initialize(small); fixed_manager.run_generation_sync(); var training_ids: Array[String] = fixed_manager.training_suite.get_identifiers(); fixed_manager.breed_next_generation(); fixed_manager.run_generation_sync()
 	_test("Suíte de treinamento permanece fixa", fixed_manager.training_suite.get_identifiers() == training_ids, failures)
 	var validation_ids: Array[String] = fixed_manager.validation_suite.get_identifiers(); fixed_manager.breed_next_generation(); fixed_manager.run_generation_sync()
 	_test("Suíte de validação permanece fixa", fixed_manager.validation_suite.get_identifiers() == validation_ids, failures)
 	var comparison: Dictionary = fixed_manager.get_baseline_comparison()
-	_test("Baselines e campeão usam mesma validação", comparison.suite_identifiers == validation_ids and comparison.random.suite_identifier == "validation-fixed" and comparison.untrained_neural.suite_identifier == "validation-fixed" and comparison.generation_champion.suite_identifier == "validation-fixed", failures)
+	var validation_name: String = fixed_manager.validation_suite.suite_identifier
+	_test("Baselines e campeão usam mesma validação", comparison.suite_identifiers == validation_ids and comparison.random.suite_identifier == validation_name and comparison.untrained_neural.suite_identifier == validation_name and comparison.generation_champion.suite_identifier == validation_name, failures)
 	var scored_result := Result.new(); scored_result.total_safe_cells = 10; scored_result.revealed_safe_cells = 5; scored_result.safe_decision_count = 3; scored_result.max_action_attempts = 40; scored_result.end_reason = Result.EndReason.MINE_DETONATED
 	var evaluator := Evaluator.new(); evaluator.configure(calibrated); var score: Dictionary = evaluator.score_result(scored_result)
 	_test("Decisões seguras são contabilizadas", score.safe_decisions == 3, failures)
@@ -55,8 +56,8 @@ static func run_all() -> Dictionary:
 	_test("Melhoria reinicia estagnação", tracker.generations_without_improvement == 0, failures)
 	_test("Saturação de saída é detectada", OutputAnalyzer.classify({"score_mean": 0.01, "mean_score_range": 0.001}) == OutputAnalyzer.Condition.SATURATED_ZERO and OutputAnalyzer.classify({"score_mean": 0.99, "mean_score_range": 0.001}) == OutputAnalyzer.Condition.SATURATED_ONE, failures)
 	_test("Pontuações uniformes são detectadas", OutputAnalyzer.classify({"score_mean": 0.5, "mean_score_range": 0.001}) == OutputAnalyzer.Condition.LOW_DIFFERENTIATION, failures)
-	var easy := Manager.new(); easy.initialize(_small_calibrated(Config.BoardEnvironment.CALIBRATION_5X5)); easy.run_generation_sync()
-	var main := Manager.new(); main.initialize(_small_calibrated(Config.BoardEnvironment.MAIN_6X6)); main.run_generation_sync()
+	var easy := Manager.new(); easy.initialize(_small_calibrated(Config.ENV_CALIBRATION_5X5)); easy.run_generation_sync()
+	var main := Manager.new(); main.initialize(_small_calibrated(Config.ENV_MAIN_6X6)); main.run_generation_sync()
 	_test("Modos 5×5 e 6×6 não misturam estatísticas", easy.config.get_experiment_identifier() != main.config.get_experiment_identifier() and easy.history.size() == 1 and main.history.size() == 1 and easy.training_suite.get_identifiers() != main.training_suite.get_identifiers(), failures)
 	var reproduce_a := Manager.new(); reproduce_a.initialize(small); reproduce_a.run_generation_sync()
 	var reproduce_b := Manager.new(); reproduce_b.initialize(small); reproduce_b.run_generation_sync()

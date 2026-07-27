@@ -11,6 +11,10 @@ var mutation_max_delta: float = 0.0
 var mutation_mean_absolute_delta: float = 0.0
 var mutation_strength: float = 0.0
 var origin: String = "initial"
+var origin_phase: int = 1
+var ancestor_identifier: String = ""
+var transfer_kind: String = ""
+var transfer_preserved: bool = false
 
 
 func duplicate_record():
@@ -18,7 +22,8 @@ func duplicate_record():
 	for property_name: String in [
 		"parent_a_identifier", "parent_b_identifier", "inherited_from_a", "inherited_from_b",
 		"crossover_applied", "mutation_count", "mutation_max_delta",
-		"mutation_mean_absolute_delta", "mutation_strength", "origin"
+		"mutation_mean_absolute_delta", "mutation_strength", "origin", "origin_phase",
+		"ancestor_identifier", "transfer_kind", "transfer_preserved"
 	]:
 		copy.set(property_name, get(property_name))
 	return copy
@@ -32,4 +37,6 @@ func to_dictionary() -> Dictionary:
 		"mutation_max_delta": mutation_max_delta,
 		"mutation_mean_absolute_delta": mutation_mean_absolute_delta,
 		"mutation_strength": mutation_strength, "origin": origin,
+		"origin_phase": origin_phase, "ancestor_identifier": ancestor_identifier,
+		"transfer_kind": transfer_kind, "transfer_preserved": transfer_preserved,
 	}

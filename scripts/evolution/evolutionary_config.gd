@@ -3,15 +3,16 @@ extends RefCounted
 
 const NetworkConfig := preload("res://scripts/neural/neural_network_config.gd")
 
-enum Preset { CALIBRATION_NO_CROSSOVER, ORIGINAL }
-enum BoardEnvironment { CALIBRATION_5X5, MAIN_6X6 }
+enum Preset { CURRICULUM_DIVERSITY, CALIBRATION_NO_CROSSOVER, ORIGINAL }
+const ENV_CALIBRATION_5X5: int = 0
+const ENV_MAIN_6X6: int = 1
 
-var preset: int = Preset.CALIBRATION_NO_CROSSOVER
-var preset_name: String = "CALIBRAÇÃO SEM CROSSOVER"
-var environment: int = BoardEnvironment.MAIN_6X6
+var preset: int = Preset.CURRICULUM_DIVERSITY
+var preset_name: String = "CURRÍCULO + DIVERSIDADE"
+var environment: int = ENV_MAIN_6X6
 var environment_name: String = "Principal 6×6 / 6 minas"
 var population_size: int = 96
-var elite_count: int = 8
+var elite_count: int = 6
 var training_scenario_count: int = 12
 var validation_scenario_count: int = 30
 var tournament_size: int = 4
@@ -38,15 +39,41 @@ var mine_detonation_penalty: float = 250.0
 var stagnation_limit: int = 15
 var relevant_improvement_epsilon: float = 0.000001
 var equal_score_tolerance: float = 0.0001
+var curriculum_enabled: bool = true
+var curriculum_start_phase: int = 1
+var automatic_phase_advancement: bool = true
+var fixed_training_core_count: int = 4
+var rotating_training_count: int = 8
+var training_pool_size: int = 256
+var final_test_scenario_count: int = 100
+var immigrant_fraction: float = 0.10
+var maximum_identical_genomes: int = 2
+var clone_retry_limit: int = 5
+var transfer_preserved_fraction: float = 0.10
+var transfer_descendant_fraction: float = 0.70
+var transfer_immigrant_fraction: float = 0.20
+var robust_mean_weight: float = 0.80
+var robust_lower_quartile_weight: float = 0.20
+var overfit_attention_percent: float = 10.0
+var overfit_probable_percent: float = 25.0
+var overfit_severe_percent: float = 50.0
 
 
-static func create_calibrated(environment_kind: int = BoardEnvironment.MAIN_6X6):
+static func create_curriculum():
+	return new()
+
+
+static func create_calibrated(environment_kind: int = ENV_MAIN_6X6):
 	var config = new()
+	config.preset = Preset.CALIBRATION_NO_CROSSOVER
+	config.preset_name = "CALIBRAÇÃO SEM CROSSOVER"
+	config.elite_count = 8
+	config.curriculum_enabled = false
 	config.apply_environment(environment_kind)
 	return config
 
 
-static func create_original(environment_kind: int = BoardEnvironment.MAIN_6X6):
+static func create_original(environment_kind: int = ENV_MAIN_6X6):
 	var config = new()
 	config.preset = Preset.ORIGINAL
 	config.preset_name = "CONFIGURAÇÃO ORIGINAL"
@@ -60,6 +87,7 @@ static func create_original(environment_kind: int = BoardEnvironment.MAIN_6X6):
 	config.mutation_probability = 0.08
 	config.mutation_strength = 0.15
 	config.fixed_training_suite = false
+	config.curriculum_enabled = false
 	config.linear_progress_fitness = false
 	config.progress_fitness_scale = 1000.0
 	config.safe_decision_bonus = 0.0
@@ -72,7 +100,7 @@ static func create_original(environment_kind: int = BoardEnvironment.MAIN_6X6):
 
 func apply_environment(environment_kind: int) -> void:
 	environment = environment_kind
-	if environment == BoardEnvironment.CALIBRATION_5X5:
+	if environment == ENV_CALIBRATION_5X5:
 		environment_name = "Calibração 5×5 / 3 minas"
 		board_width = 5
 		board_height = 5
@@ -102,6 +130,14 @@ func is_valid() -> bool:
 		and is_instance_valid(network_config) and network_config.is_valid()
 		and progress_fitness_scale >= 0.0 and victory_bonus > progress_fitness_scale
 		and stagnation_limit > 0 and equal_score_tolerance >= 0.0
+		and (not curriculum_enabled or (
+			fixed_training_core_count >= 0 and rotating_training_count >= 0
+			and fixed_training_core_count + rotating_training_count == training_scenario_count
+		))
+		and training_pool_size >= training_scenario_count and final_test_scenario_count >= 1
+		and immigrant_fraction >= 0.0 and immigrant_fraction < 1.0
+		and maximum_identical_genomes >= 1 and clone_retry_limit >= 1
+		and is_equal_approx(robust_mean_weight + robust_lower_quartile_weight, 1.0)
 	)
 
 
@@ -114,7 +150,13 @@ func duplicate_config():
 		"master_seed", "board_width", "board_height", "mine_count", "first_reveal", "fixed_training_suite",
 		"linear_progress_fitness", "progress_fitness_scale", "safe_decision_bonus", "victory_bonus",
 		"victory_efficiency_scale", "invalid_action_penalty", "invalid_end_penalty",
-		"mine_detonation_penalty", "stagnation_limit", "relevant_improvement_epsilon", "equal_score_tolerance"
+		"mine_detonation_penalty", "stagnation_limit", "relevant_improvement_epsilon", "equal_score_tolerance",
+		"curriculum_enabled", "curriculum_start_phase", "automatic_phase_advancement",
+		"fixed_training_core_count", "rotating_training_count", "training_pool_size",
+		"final_test_scenario_count", "immigrant_fraction", "maximum_identical_genomes", "clone_retry_limit",
+		"transfer_preserved_fraction", "transfer_descendant_fraction", "transfer_immigrant_fraction",
+		"robust_mean_weight", "robust_lower_quartile_weight", "overfit_attention_percent",
+		"overfit_probable_percent", "overfit_severe_percent"
 	]:
 		copy.set(property_name, get(property_name))
 	copy.network_config = network_config.duplicate_config()

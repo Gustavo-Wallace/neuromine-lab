@@ -6,8 +6,8 @@ const OutputAnalyzer := preload("res://scripts/evolution/neural_output_analyzer.
 
 
 func _initialize() -> void:
-	_run_environment(Config.BoardEnvironment.CALIBRATION_5X5, 20)
-	_run_environment(Config.BoardEnvironment.MAIN_6X6, 10)
+	_run_environment(Config.ENV_CALIBRATION_5X5, 20)
+	_run_environment(Config.ENV_MAIN_6X6, 10)
 	quit(0)
 
 

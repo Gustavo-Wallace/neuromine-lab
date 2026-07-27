@@ -8,7 +8,7 @@ const Individual := preload("res://scripts/evolution/evolutionary_individual.gd"
 
 
 static func run_all() -> Dictionary:
-	var config := Config.new(); config.population_size = 12; config.elite_count = 2
+	var config: Config = Config.create_calibrated(); config.population_size = 12; config.elite_count = 2
 	config.tournament_size = 3; config.crossover_probability = 0.7
 	config.mutation_probability = 1.0; config.mutation_strength = 0.5; config.master_seed = 99117
 	var algorithm := Algorithm.new(); algorithm.configure(config)

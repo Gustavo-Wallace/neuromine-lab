@@ -17,7 +17,11 @@ func _run() -> void:
 	panel.config.population_size = 6
 	panel.config.elite_count = 2
 	panel.config.training_scenario_count = 2
+	panel.config.fixed_training_core_count = 1
+	panel.config.rotating_training_count = 1
+	panel.config.training_pool_size = 16
 	panel.config.validation_scenario_count = 3
+	panel.config.final_test_scenario_count = 5
 	panel._initialize_evolution()
 	panel._on_one_generation_pressed()
 	await process_frame
@@ -37,7 +41,7 @@ func _run() -> void:
 		is_instance_valid(main.visual_controller.simulator)
 		and main.visual_controller.simulator.agent is NeuralAgentScript
 		and main.visual_controller.simulator.agent.trained
-		and main.visual_controller.simulator.first_move == Vector2i(3, 3)
+		and main.visual_controller.simulator.first_move == panel.manager.config.first_reveal
 		and main.get_node("%ShowHeatmapButton").button_pressed
 	)
 	if paused_ok and generation_ok and visual_ok:
